@@ -6,6 +6,8 @@
   "typings": "./dist/@types/src/index",
   "scripts": {
     "build": "../node_modules/.bin/tsc --build",
+    "watch": "tsc -b --watch",
+    "clean": "tsc -b --clean && rm -rf dist",
     "test": "pnpm build && pnpm test:node && pnpm test:browser",
     "test:browser": "karma start karma.conf.js --single-run",
     "test:node": "jasmine dist/test/unit/all.js"

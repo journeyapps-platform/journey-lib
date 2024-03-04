@@ -33,7 +33,7 @@ export class SingleChoiceIntegerType extends DBTypeMixin(SchemaSingleChoiceInteg
     let option: number = null;
     if (typeof value == 'number') {
       option = value;
-    } else if (value instanceof EnumOption) {
+    } else if (EnumOption.isInstanceOf(value)) {
       // We convert enums to a plain integer
       option = value.value as number;
     }

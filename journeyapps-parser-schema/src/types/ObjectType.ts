@@ -18,7 +18,7 @@ export interface NotificationConfig {
 export class ObjectType extends Type {
   static readonly TYPE = 'object';
 
-  static isInstanceOf(type: Type): type is ObjectType {
+  static isInstanceOf(type: any): type is ObjectType {
     return type.name == ObjectType.TYPE;
   }
 
@@ -122,7 +122,7 @@ export class ObjectType extends Type {
       attributes: this.attributes,
       belongsTo: belongsTo,
       hasMany: hasMany,
-      display: '' + this.displayFormat.toString()
+      display: '' + this.displayFormat?.toString()
     };
   }
 

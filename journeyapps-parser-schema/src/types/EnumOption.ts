@@ -10,6 +10,12 @@ export class EnumOption {
 
   sourceElement: XMLElement;
 
+  static isInstanceOf(value: any): value is EnumOption {
+    return (
+      value instanceof EnumOption || (typeof value == 'object' && value != null && 'value' in value && 'label' in value)
+    );
+  }
+
   constructor(key: string | number | boolean, label: string, index?: number) {
     this.value = key;
     this.label = label;
