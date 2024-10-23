@@ -42,60 +42,120 @@ describe('Expression Parsing ', () => {
   });
 
   it('should parse ShorthandTokenExpression', ({ parser }) => {
-    let result = parser.parse({ source: 'user.name' });
+    let result = parser.parse<ShorthandTokenExpression>({ source: 'foo' });
+    expect(result).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result.expression).toEqual('foo');
+
+    result = parser.parse<ShorthandTokenExpression>({ source: 'user.name' });
     expect(result).toBeInstanceOf(ShorthandTokenExpression);
     expect(result.expression).toEqual('user.name');
-
-    result = parser.parse({ source: 'user.name.first' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('user.name.first');
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'name' })]);
 
     result = parser.parse({ source: '{user.name}' });
     expect(result).toBeInstanceOf(ShorthandTokenExpression);
     expect(result.expression).toEqual('user.name');
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'name' })]);
 
-    result = parser.parse({ source: 'foo' });
+    result = parser.parse({ source: 'user.name.first' });
     expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('foo');
+    expect(result.expression).toEqual('user.name.first');
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([
+      new ShorthandTokenExpression({ expression: 'name' }),
+      new ShorthandTokenExpression({ expression: 'first' })
+    ]);
+
+    result = parser.parse<ShorthandTokenExpression>({ source: 'user[field]' });
+    expect(result).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result.expression).toEqual('user[field]');
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([
+      new ShorthandTokenExpression({ expression: 'field', isComputed: true })
+    ]);
+
+    result = parser.parse<ShorthandTokenExpression>({ source: 'user.roles[field]' });
+    expect(result).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result.expression).toEqual('user.roles[field]');
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([
+      new ShorthandTokenExpression({ expression: 'roles' }),
+      new ShorthandTokenExpression({ expression: 'field', isComputed: true })
+    ]);
+
+    result = parser.parse<ShorthandTokenExpression>({ source: "user['name'].length" });
+    expect(result).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result.expression).toEqual("user['name'].length");
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([
+      new ConstantTokenExpression({ expression: 'name', isComputed: true }),
+      new ShorthandTokenExpression({ expression: 'length' })
+    ]);
+
+    result = parser.parse<ShorthandTokenExpression>({ source: "user['roles']['admin']" });
+    expect(result).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result.expression).toEqual("user['roles']['admin']");
+    expect(result.options.name).toEqual('user');
+    expect(result.options.properties).toEqual([
+      new ConstantTokenExpression({ expression: 'roles', isComputed: true }),
+      new ConstantTokenExpression({ expression: 'admin', isComputed: true })
+    ]);
+
+    result = parser.parse<ShorthandTokenExpression>({ source: "user.files['image'].filename.length" });
+    expect(result).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result.expression).toEqual("user.files['image'].filename.length");
   });
 
   it('should parse FunctionTokenExpression', ({ parser }) => {
-    let result = parser.parse({ source: 'foo()' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('foo()');
+    const result1: any = parser.parse({ source: 'foo()' });
+    expect(result1).toBeInstanceOf(FunctionTokenExpression);
+    expect(result1.expression).toEqual('foo()');
 
-    result = parser.parse({ source: '$:foo()' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('foo()');
+    const result2 = parser.parse({ source: '$:foo()' });
+    expect(result2).toBeInstanceOf(FunctionTokenExpression);
+    expect(result2.expression).toEqual('foo()');
 
-    result = parser.parse({ source: '{$:foo()}' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('foo()');
+    const result3 = parser.parse({ source: '{$:foo()}' });
+    expect(result3).toBeInstanceOf(FunctionTokenExpression);
+    expect(result3.expression).toEqual('foo()');
 
-    result = parser.parse({ source: '$:myVar.foo()' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('myVar.foo()');
+    const result4 = parser.parse({ source: '$:myVar.foo()' });
+    expect(result4).toBeInstanceOf(FunctionTokenExpression);
+    expect(result4.expression).toEqual('myVar.foo()');
 
-    result = parser.parse({ source: '$:myVar' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('myVar');
+    const result5 = parser.parse({ source: '$:myVar' });
+    expect(result5).toBeInstanceOf(FunctionTokenExpression);
+    expect(result5.expression).toEqual('myVar');
 
-    result = parser.parse({ source: '$:journey.version' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('journey.version');
+    const result6 = parser.parse<ShorthandTokenExpression>({ source: '$:journey.version' });
+    expect(result6).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result6.expression).toEqual('journey.version');
+    expect(result6.options.name).toEqual('journey');
+    expect(result6.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'version' })]);
+    expect(result6.stringify()).toEqual('journey.version');
 
-    result = parser.parse({ source: '$:null' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('null');
+    const result7 = parser.parse<ShorthandTokenExpression>({ source: "$:user['name'].length" });
+    expect(result6).toBeInstanceOf(ShorthandTokenExpression);
+    expect(result7.expression).toEqual("user['name'].length");
+    expect(result7.options.name).toEqual('user');
+    expect(result7.options.properties).toEqual([
+      new ConstantTokenExpression({ expression: 'name', isComputed: true }),
+      new ShorthandTokenExpression({ expression: 'length' })
+    ]);
 
-    result = parser.parse({ source: '$:true' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('true');
+    const result8 = parser.parse({ source: '$:null' });
+    expect(result8).toBeInstanceOf(FunctionTokenExpression);
+    expect(result8.expression).toEqual('null');
 
-    result = parser.parse({ source: '$:(showIf() || false)' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('showIf() || false');
-    expect(result.stringify()).toEqual('(function(left, right) { return left || right; })(showIf(), false)');
+    const result9 = parser.parse({ source: '$:true' });
+    expect(result9).toBeInstanceOf(FunctionTokenExpression);
+    expect(result9.expression).toEqual('true');
+
+    const result10 = parser.parse({ source: '$:(showIf() || false)' });
+    expect(result10).toBeInstanceOf(FunctionTokenExpression);
+    expect(result10.expression).toEqual('showIf() || false');
+    expect(result10.stringify()).toEqual('(function(left, right) { return left || right; })(showIf(), false)');
   });
 
   it('should parse FunctionTokenExpression with arguments', ({ parser }) => {
@@ -114,7 +174,16 @@ describe('Expression Parsing ', () => {
 
     result = parser.parse<FunctionTokenExpression>({ source: 'foo(user.name.first)' });
     expect(result.functionName()).toEqual('foo');
-    expect(result.arguments).toEqual([new ShorthandTokenExpression({ expression: 'user.name.first' })]);
+    expect(result.arguments).toEqual([
+      new ShorthandTokenExpression({
+        expression: 'user.name.first',
+        name: 'user',
+        properties: [
+          new ShorthandTokenExpression({ expression: 'name' }),
+          new ShorthandTokenExpression({ expression: 'first' })
+        ]
+      })
+    ]);
 
     result = parser.parse<FunctionTokenExpression>({ source: 'foo([true, "bar", user.name])' });
     expect(result.functionName()).toEqual('foo');
@@ -125,7 +194,11 @@ describe('Expression Parsing ', () => {
         elements: [
           new PrimitiveConstantTokenExpression({ expression: true }),
           new ConstantTokenExpression({ expression: 'bar' }),
-          new ShorthandTokenExpression({ expression: 'user.name' })
+          new ShorthandTokenExpression({
+            expression: 'user.name',
+            name: 'user',
+            properties: [new ShorthandTokenExpression({ expression: 'name' })]
+          })
         ]
       })
     );

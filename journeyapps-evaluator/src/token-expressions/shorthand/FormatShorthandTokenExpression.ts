@@ -1,10 +1,9 @@
 /**
  * Shorthand token expression with format specifier.
  */
-import { ShorthandTokenExpression } from './ShorthandTokenExpression';
-import { TokenExpressionOptions } from '../TokenExpression';
+import { ShorthandTokenExpression, ShorthandTokenExpressionOptions } from './ShorthandTokenExpression';
 
-export interface FormatShorthandTokenExpressionOptions extends TokenExpressionOptions {
+export interface FormatShorthandTokenExpressionOptions extends ShorthandTokenExpressionOptions {
   format: string;
 }
 

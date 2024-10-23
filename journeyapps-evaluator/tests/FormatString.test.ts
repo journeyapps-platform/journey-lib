@@ -32,7 +32,12 @@ describe('FormatString', () => {
 
   it('should compile ShorthandTokenExpressions', () => {
     expect(FormatString.compile('{person.name}')).toEqual([
-      new ShorthandTokenExpression({ expression: 'person.name', start: 0 })
+      new ShorthandTokenExpression({
+        expression: 'person.name',
+        name: 'person',
+        start: 0,
+        properties: [new ShorthandTokenExpression({ expression: 'name' })]
+      })
     ]);
   });
 
@@ -49,7 +54,13 @@ describe('FormatString', () => {
       new ConstantTokenExpression({ expression: '{some text} more ', start: 0 }),
       new ShorthandTokenExpression({ expression: 'serial', start: 19 }),
       new ConstantTokenExpression({ expression: ' ', start: 27 }),
-      new FormatShorthandTokenExpression({ expression: 'something.other', format: '.2f', start: 28 }),
+      new FormatShorthandTokenExpression({
+        expression: 'something.other',
+        name: 'something',
+        format: '.2f',
+        properties: [new ShorthandTokenExpression({ expression: 'other' })],
+        start: 28
+      }),
       new ConstantTokenExpression({ expression: ' ', start: 49 }),
       new FunctionTokenExpression({
         expression: 'foo("bar")',
@@ -96,9 +107,18 @@ describe('FormatString', () => {
   describe('should compile FunctionTokenExpression', () => {
     it('from JS/TS member expression ', () => {
       let result = FormatString.compile('{$:journey.runtime.version}');
-      expect(result).toEqual([new FunctionTokenExpression({ expression: 'journey.runtime.version', start: 0 })]);
-
-      expect(result[0].isShorthand()).toEqual(false);
+      expect(result).toEqual([
+        new ShorthandTokenExpression({
+          expression: 'journey.runtime.version',
+          name: 'journey',
+          properties: [
+            new ShorthandTokenExpression({ expression: 'runtime' }),
+            new ShorthandTokenExpression({ expression: 'version' })
+          ],
+          isFunction: true,
+          start: 0
+        })
+      ]);
 
       expect(FormatString.compile('{$:true}')).toEqual([new FunctionTokenExpression({ expression: 'true', start: 0 })]);
     });
@@ -223,7 +243,12 @@ describe('FormatString', () => {
       ]);
 
       expect(FormatString.compile('{person.name} {$:foo()}')).toEqual([
-        new ShorthandTokenExpression({ expression: 'person.name', start: 0 }),
+        new ShorthandTokenExpression({
+          expression: 'person.name',
+          name: 'person',
+          properties: [new ShorthandTokenExpression({ expression: 'name' })],
+          start: 0
+        }),
         new ConstantTokenExpression({ expression: ' ', start: 13 }),
         new FunctionTokenExpression({ expression: 'foo()', arguments: [], start: 14 })
       ]);

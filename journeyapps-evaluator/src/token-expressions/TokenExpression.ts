@@ -2,7 +2,6 @@ import { FormatStringScope } from '../definitions/FormatStringScope';
 
 export interface TokenExpressionOptions {
   expression: string;
-
   start?: number;
   format?: string;
   isPrimitive?: boolean;
@@ -12,6 +11,7 @@ export interface TokenExpressionOptions {
    * If the token expression is a function that needs to be called or not.
    */
   isFunction?: boolean;
+  isComputed?: boolean;
 }
 
 export abstract class TokenExpression<O extends TokenExpressionOptions = TokenExpressionOptions, V extends any = any> {
@@ -25,7 +25,14 @@ export abstract class TokenExpression<O extends TokenExpressionOptions = TokenEx
       throw new Error('Cannot instantiate abstract TokenExpression class!');
     }
     this.type = type;
-    this.options = { isPrimitive: false, isConstant: false, isShorthand: false, isFunction: false, ...options };
+    this.options = {
+      isPrimitive: false,
+      isConstant: false,
+      isShorthand: false,
+      isFunction: false,
+      isComputed: false,
+      ...options
+    };
     this.expression = this.options.expression;
     this.isPrimitive = this.options.isPrimitive;
   }
