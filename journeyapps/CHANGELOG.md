@@ -1,5 +1,11 @@
 # journeyapps
 
+## 7.3.12
+
+### Patch Changes
+
+- @journeyapps/db@8.0.11
+
 ## 7.3.11
 
 ### Patch Changes
