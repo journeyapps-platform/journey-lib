@@ -102,6 +102,12 @@ describe('Evaluate', () => {
     expect(evaluate('{{some text}} more {serial}', scope)).toBe('{some text} more 12345');
   });
 
+  it('should handle TemplateLiterals', ({ scope }) => {
+    expect(evaluate('{`TEMPLATE`}', scope)).toBe('{$:`TEMPLATE`}');
+    expect(evaluate("{`TEMPLATE ${'true'}`}", scope)).toBe("{$:`TEMPLATE ${'true'}`}");
+    expect(evaluate('{`TEMPLATE ${view.users.length ?? 0}`}', scope)).toBe('{$:`TEMPLATE ${view.users.length ?? 0}`}');
+  });
+
   it('should handle mixed text via tokenEvaluatePromise', ({ scope }) => {
     expect(evaluatePromise('Asset {serial}', scope)).resolves.toEqual('Asset 12345');
     expect(evaluatePromise('{{some text}} more {serial}', scope)).resolves.toEqual('{some text} more 12345');
