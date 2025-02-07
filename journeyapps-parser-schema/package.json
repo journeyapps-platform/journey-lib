@@ -1,6 +1,6 @@
 {
   "name": "@journeyapps/parser-schema",
-  "version": "8.2.2",
+  "version": "8.2.3",
   "description": "Journey Parser Schema library",
   "main": "./dist/index.js",
   "typings": "./dist/@types/index.d.ts",
