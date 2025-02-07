@@ -1,7 +1,9 @@
 import {
   Directive,
+  AwaitExpression,
   ExpressionStatement,
   isDirective,
+  isAwaitExpression,
   isExpressionStatement,
   isLabeledStatement,
   LabeledStatement,
@@ -23,6 +25,8 @@ export class ExpressionNodeParser extends AbstractExpressionParser<ExpressionTyp
       expression = node.body;
     } else if (isDirective(node)) {
       expression = node.value;
+    } else if (isAwaitExpression(node)) {
+      expression = (node as AwaitExpression).argument;
     } else if (isExpressionStatement(node)) {
       expression = node.expression;
     }
@@ -33,7 +37,7 @@ export class ExpressionNodeParser extends AbstractExpressionParser<ExpressionTyp
 
 export class ExpressionNodeParserFactory extends ExpressionParserFactory<ExpressionNodeParser> {
   constructor() {
-    super(['Directive', 'LabeledStatement', 'ExpressionStatement']);
+    super(['Directive', 'AwaitExpression', 'LabeledStatement', 'ExpressionStatement']);
   }
 
   getParser() {
