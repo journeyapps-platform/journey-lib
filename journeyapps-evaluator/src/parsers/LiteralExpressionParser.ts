@@ -1,4 +1,11 @@
-import { DirectiveLiteral, isDirectiveLiteral, isStringLiteral, isNullLiteral, Literal } from '@babel/types';
+import {
+  DirectiveLiteral,
+  isDirectiveLiteral,
+  isStringLiteral,
+  isNullLiteral,
+  isTemplateLiteral,
+  Literal
+} from '@babel/types';
 import { FormatStringContext } from '../context/FormatStringContext';
 import { FunctionExpressionContext } from '../context/FunctionExpressionContext';
 
@@ -22,7 +29,7 @@ export type ParsedLiteralExpressionType =
 
 export class LiteralExpressionParser extends AbstractExpressionParser<LiteralExpression, ParsedLiteralExpressionType> {
   parse(event: ExpressionNodeParseEvent<LiteralExpression>) {
-    const { node, context } = event;
+    const { node, context, source } = event;
     const inFunctionContext = FunctionExpressionContext.isInstanceOf(context);
     if (isStringLiteral(node) || isDirectiveLiteral(node)) {
       if (inFunctionContext) {
@@ -42,12 +49,17 @@ export class LiteralExpressionParser extends AbstractExpressionParser<LiteralExp
       }
       return new PrimitiveConstantTokenExpression({ expression: node.value });
     }
+    if (isTemplateLiteral(node)) {
+      return new FunctionTokenExpression({ expression: source.slice(node.start, node.end) });
+    }
+    // Fallback to FunctionTokenExpression, until we have a better way to handle this
+    return new FunctionTokenExpression({ expression: source.slice(node.start, node.end) });
   }
 }
 
 export class LiteralExpressionParserFactory extends ExpressionParserFactory<LiteralExpressionParser> {
   constructor() {
-    super(['Literal', 'DirectiveLiteral']);
+    super(['Literal', 'StringLiteral', 'TemplateLiteral', 'DirectiveLiteral', 'NullLiteral']);
   }
 
   getParser() {

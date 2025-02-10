@@ -1,5 +1,17 @@
 # @journeyapps/evaluator
 
+## 7.0.3
+
+### Patch Changes
+
+- a68b965: fix: Parsing AwaitExpression into FunctionTokenExpression and improve error handling in TokenExpressionParser when using Babel parser.
+
+## 7.0.2
+
+### Patch Changes
+
+- 16bb578: Fix: Add support for parsing `TemplateLiternal` expressions
+
 ## 7.0.1
 
 ### Patch Changes

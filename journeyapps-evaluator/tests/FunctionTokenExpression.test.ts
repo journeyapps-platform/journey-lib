@@ -66,6 +66,14 @@ describe('FunctionTokenExpression', () => {
     expect(token.stringify()).toEqual("'string'");
   });
 
+  it('should parse $:await foo() expression', () => {
+    const token = FunctionTokenExpression.parse('$:await foo()');
+    expect(token).toBeInstanceOf(FunctionTokenExpression);
+    expect(token.expression).toEqual('foo()');
+    expect(token.isCallExpression()).toEqual(true);
+    expect(token.stringify()).toEqual('foo()');
+  });
+
   it('should parse expression without brackets', () => {
     const token = FunctionTokenExpression.parse('$:foo');
     expect(token).toBeInstanceOf(FunctionTokenExpression);
@@ -107,6 +115,12 @@ describe('FunctionTokenExpression', () => {
 
     it('should return a function token expression', () => {
       const token = functionTokenExpression('$:foo()');
+      expect(token).toBeInstanceOf(FunctionTokenExpression);
+      expect(token.expression).toEqual('foo()');
+    });
+
+    it('should handle await function expression', () => {
+      const token = functionTokenExpression('$:await foo()');
       expect(token).toBeInstanceOf(FunctionTokenExpression);
       expect(token.expression).toEqual('foo()');
     });
