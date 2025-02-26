@@ -84,13 +84,13 @@ export class VariableFormatStringScope implements FormatStringScope {
     if (typeof scope._get == 'function') {
       // DatabaseObject
       return scope._get(name);
-    } else {
-      if (typeof scope[name] == 'function') {
-        return scope[name]();
-      } else {
-        return scope[name];
-      }
     }
+
+    if (typeof scope[name] == 'function') {
+      return scope[name]();
+    }
+
+    return scope[name];
   }
 
   static cached(scope: VariableScope, name: string): any {
