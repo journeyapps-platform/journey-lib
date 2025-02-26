@@ -1,8 +1,8 @@
-import { DatabaseObject } from './DatabaseObject';
+import { PersistedObjectData } from '../types/ObjectData';
+import * as j from '../utils/JourneyPromise';
 import { DatabaseAdapter } from './adapters/DatabaseAdapter';
 import { Database } from './Database';
-import * as j from '../utils/JourneyPromise';
-import { PersistedObjectData } from '../types/ObjectData';
+import { DatabaseObject } from './DatabaseObject';
 
 interface BatchOperation {
   object: DatabaseObject;
@@ -90,10 +90,10 @@ export class Batch {
   /**
    * @internal
    */
-  _execute(): Promise<void> {
+  async _execute(): Promise<void> {
     const ops = this._getOps();
     if (ops.length == 0) {
-      return Promise.resolve();
+      return;
     }
 
     // Split into smaller batches, and execute them sequentially.
@@ -103,43 +103,38 @@ export class Batch {
       splitBatches.push(ops.slice(i, i + batchLimit));
     }
 
-    let promise = Promise.resolve();
     const adapter = this.adapter;
-    let errors: BatchError[] = [];
-    splitBatches.forEach(function (splitOps) {
-      promise = promise
-        .then(function () {
-          return adapter.applyBatch(splitOps);
-        })
-        .then(function (results) {
-          for (let j = 0; j < splitOps.length; j++) {
-            const result = results[j];
-            const op = splitOps[j];
+    const errors: BatchError[] = [];
+    for (const splitOps of splitBatches) {
+      const results = await adapter.applyBatch(splitOps);
 
-            if (result.error) {
-              errors.push({
-                object: op.object,
-                operation: op.op,
-                error: result.error
-              });
-            } else {
-              if (op.op == 'put' || op.op == 'patch') {
-                op.object._persisted();
-              } else if (op.op == 'delete') {
-                op.object._destroyed();
-              }
-            }
-          }
-        });
-    });
+      splitOps.forEach((op, j) => {
+        const result = results[j];
 
-    return promise.then(function () {
-      if (errors.length > 0) {
-        return Promise.reject(new CrudError(errors));
-      } else {
-        return null;
-      }
-    });
+        if (result.error) {
+          errors.push({
+            object: op.object,
+            operation: op.op,
+            error: result.error
+          });
+          return;
+        }
+
+        if (op.op == 'put' || op.op == 'patch') {
+          op.object._persisted();
+          return;
+        }
+
+        if (op.op == 'delete') {
+          op.object._destroyed();
+          return;
+        }
+      });
+    }
+
+    if (errors.length > 0) {
+      throw new CrudError(errors);
+    }
   }
 
   private _getOps(): ExecuteBatchOperation[] {
