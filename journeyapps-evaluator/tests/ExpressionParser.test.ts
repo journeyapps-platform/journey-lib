@@ -3,6 +3,7 @@ import {
   ArrayTokenExpression,
   ConstantTokenExpression,
   FormatShorthandTokenExpression,
+  FunctionExpressionContext,
   FunctionTokenExpression,
   PrimitiveConstantTokenExpression,
   ShorthandTokenExpression,
@@ -238,5 +239,25 @@ describe('Expression Parsing ', () => {
     expect(result).toBeInstanceOf(FormatShorthandTokenExpression);
     expect(result.expression).toEqual('product.price');
     expect(result.format).toEqual('.2f');
+  });
+
+  it('should parse member expressions', ({ parser }) => {
+    let result = parser.parse({ source: '$:foo.bar.bas' }) as FunctionTokenExpression;
+    expect(result).toBeInstanceOf(FunctionTokenExpression);
+    expect(result.options.name).toEqual('foo');
+    expect(result.options.properties).toEqual([
+      new ShorthandTokenExpression({ expression: 'bar' }),
+      new ShorthandTokenExpression({ expression: 'bas' })
+    ]);
+
+    result = parser.parse({ source: '$:shared.func().something' }) as FunctionTokenExpression;
+    expect(result).toBeInstanceOf(FunctionTokenExpression);
+    expect(result.options.name).toEqual('shared.func()');
+    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'something' })]);
+
+    result = parser.parse({ source: '$:shared.something.func()' }) as FunctionTokenExpression;
+    expect(result).toBeInstanceOf(FunctionTokenExpression);
+    expect(result.options.name).toEqual('shared.something.func');
+    expect(result.options.properties).toEqual(undefined);
   });
 });

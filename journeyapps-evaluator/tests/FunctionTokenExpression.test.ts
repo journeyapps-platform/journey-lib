@@ -74,6 +74,14 @@ describe('FunctionTokenExpression', () => {
     expect(token.stringify()).toEqual('foo()');
   });
 
+  it('should parse complex $:await expression', () => {
+    const token = FunctionTokenExpression.parse('$:shared.foo((await $object.bar()).bas)');
+    expect(token).toBeInstanceOf(FunctionTokenExpression);
+    expect(token.expression).toEqual('shared.foo((await $object.bar()).bas)');
+    expect(token.isCallExpression()).toEqual(true);
+    expect(token.stringify()).toEqual('shared.foo((await $object.bar()).bas)');
+  });
+
   it('should parse expression without brackets', () => {
     const token = FunctionTokenExpression.parse('$:foo');
     expect(token).toBeInstanceOf(FunctionTokenExpression);
