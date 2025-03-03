@@ -1,5 +1,11 @@
 # @journeyapps/evaluator
 
+## 7.0.4
+
+### Patch Changes
+
+- 9abb3f9: Improve parsing of await- and member expressions
+
 ## 7.0.3
 
 ### Patch Changes

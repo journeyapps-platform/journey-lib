@@ -1,6 +1,6 @@
 {
   "name": "journeyapps",
-  "version": "7.3.13",
+  "version": "7.3.14",
   "description": "Journey JS library",
   "main": "./dist/index.js",
   "scripts": {
