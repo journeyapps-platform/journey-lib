@@ -1,4 +1,4 @@
-import { MemberExpression, isIdentifier } from '@babel/types';
+import { MemberExpression, isIdentifier, isMemberExpression, isCallExpression } from '@babel/types';
 import { FunctionExpressionContext } from '../context/FunctionExpressionContext';
 import {
   FormatShorthandTokenExpression,
@@ -56,27 +56,31 @@ export class MemberExpressionParser extends AbstractExpressionParser<MemberExpre
     properties: TokenExpression[];
   } {
     const { node, source, parseNode } = event;
-    if (isIdentifier(node.object)) {
-      const propertyExpr = parseNode({
-        node: node.property,
-        source: source.slice(node.property.start, node.property.end)
-      });
-      propertyExpr.options.isComputed = node.computed;
-      properties.push(propertyExpr);
-      return {
-        objectName: node.object.name,
-        properties: properties
-      };
-    }
 
-    const result = MemberExpressionParser.parseMember({ ...event, node: node.object as MemberExpression }, properties);
     const propertyExpr = parseNode({
       node: node.property,
       source: source.slice(node.property.start, node.property.end)
     });
     propertyExpr.options.isComputed = node.computed;
-    result.properties.push(propertyExpr);
-    return result;
+    // push to front of array
+    properties.unshift(propertyExpr);
+
+    if (isMemberExpression(node.object)) {
+      return MemberExpressionParser.parseMember(
+        {
+          ...event,
+          node: node.object
+        },
+        properties
+      );
+    }
+
+    const objectExpr = parseNode({ node: node.object, source: source.slice(0, node.object.end) });
+
+    return {
+      objectName: objectExpr.stringify(),
+      properties: properties
+    };
   }
 }
 
