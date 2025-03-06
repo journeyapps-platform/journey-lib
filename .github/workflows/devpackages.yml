@@ -50,3 +50,5 @@ jobs:
         with:
           dev: true
           version-cli: lerno
+          # TODO: Tag for V5, remove before merging
+          tag: v5-dev
