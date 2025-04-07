@@ -1,13 +1,13 @@
-import { Query } from '../query/Query';
-import { Batch, CrudError } from './Batch';
-import { RelationMatch } from '../query/queryOperations';
-import * as uuid from 'uuid';
-import { ObjectData } from '../types/ObjectData';
-import { GenericObject } from '../types/GenericObject';
-import { ObjectType } from '../types/ObjectType';
-import { DatabaseAdapter } from './adapters/DatabaseAdapter';
 import { VariableFormatStringScope } from '@journeyapps/evaluator';
+import * as uuid from 'uuid';
+import { Query } from '../query/Query';
+import { RelationMatch } from '../query/queryOperations';
+import { GenericObject } from '../types/GenericObject';
+import { ObjectData } from '../types/ObjectData';
+import { ObjectType } from '../types/ObjectType';
 import * as j from '../utils/JourneyPromise';
+import { DatabaseAdapter } from './adapters/DatabaseAdapter';
+import { Batch, CrudError } from './Batch';
 
 // type is the type object, not the name
 export class DatabaseObject {
@@ -204,10 +204,10 @@ export class DatabaseObject {
     let saving = false;
 
     // Returns a promise that is resolved when this object is saved.
-    function _save() {
+    async function _save() {
       if (destroyed) {
         // Don't save an object that has been destroyed.
-        return Promise.resolve();
+        return;
       }
 
       // Create a batch with this object.
@@ -375,16 +375,20 @@ export class DatabaseObject {
       }
     }
 
-    Object.keys(type.attributes).forEach(function (name) {
+    Object.keys(type.attributes).forEach((name) => {
       if (blacklist.indexOf(name) != -1) {
         return;
       }
-      (objself as any).__defineSetter__(name, function (value: any) {
-        setAttribute(name, value);
-      });
 
-      (objself as any).__defineGetter__(name, function () {
-        return attributes[name];
+      Object.defineProperty(objself, name, {
+        get() {
+          return attributes[name];
+        },
+        set(value: any) {
+          setAttribute(name, value);
+        },
+        enumerable: true,
+        configurable: true
       });
 
       attributes[name] = null;
@@ -431,10 +435,10 @@ export class DatabaseObject {
       }
     }
 
-    function getBelongsTo(name: string): Promise<DatabaseObject> {
+    async function getBelongsTo(name: string): Promise<DatabaseObject> {
       const rel = type.belongsTo[name];
       if (rel == null) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
       // undefined means not looked up yet.
@@ -466,7 +470,7 @@ export class DatabaseObject {
           return promise2;
         }
       } else {
-        return Promise.resolve(belongsToCache[name]);
+        return belongsToCache[name];
       }
     }
 
@@ -536,19 +540,25 @@ export class DatabaseObject {
     });
 
     // Return an attribute or relationship as a promise.
-    function _get(name: string): Promise<any> {
+    async function _get(name: string): Promise<any> {
       // TODO: belongs_to ids
       if (name === 'id') {
-        return Promise.resolve(id);
-      } else if (type.attributes[name]) {
-        return Promise.resolve((objself as GenericObject)[name]);
-      } else if (type.belongsTo[name]) {
-        return getBelongsTo(name);
-      } else if (type.hasMany[name]) {
-        return Promise.resolve((objself as GenericObject)[name]);
-      } else {
-        return Promise.resolve(null);
+        return id;
       }
+
+      if (type.attributes[name]) {
+        return (objself as GenericObject)[name];
+      }
+
+      if (type.belongsTo[name]) {
+        return getBelongsTo(name);
+      }
+
+      if (type.hasMany[name]) {
+        return (objself as GenericObject)[name];
+      }
+
+      return null;
     }
 
     // Return an attribute or cached relationship immediately.
