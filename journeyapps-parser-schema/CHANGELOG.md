@@ -1,5 +1,14 @@
 # @journeyapps/parser-schema
 
+## 8.2.5
+
+### Patch Changes
+
+- f1f492c: Fix null pointer when accessing `displayFormat` on `ObjectType`
+- Updated dependencies [d2e1526]
+  - @journeyapps/evaluator@7.0.5
+  - @journeyapps/parser-common@8.0.7
+
 ## 8.2.4
 
 ### Patch Changes

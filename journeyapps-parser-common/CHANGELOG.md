@@ -1,5 +1,12 @@
 # @journeyapps/parser-common
 
+## 8.0.7
+
+### Patch Changes
+
+- Updated dependencies [d2e1526]
+  - @journeyapps/evaluator@7.0.5
+
 ## 8.0.6
 
 ### Patch Changes
