@@ -1,5 +1,11 @@
 # @journeyapps/evaluator
 
+## 7.0.5
+
+### Patch Changes
+
+- d2e1526: Refactor `Batch`, `DatabaseObject` and `VariableFormatStringScope` to use `async` and return early.
+
 ## 7.0.4
 
 ### Patch Changes

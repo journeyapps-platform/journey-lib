@@ -1,5 +1,16 @@
 # @journeyapps/db
 
+## 8.0.14
+
+### Patch Changes
+
+- d2e1526: Refactor `Batch`, `DatabaseObject` and `VariableFormatStringScope` to use `async` and return early.
+- Updated dependencies [f1f492c]
+- Updated dependencies [d2e1526]
+  - @journeyapps/parser-schema@8.2.5
+  - @journeyapps/evaluator@7.0.5
+  - @journeyapps/parser-common@8.0.7
+
 ## 8.0.13
 
 ### Patch Changes
