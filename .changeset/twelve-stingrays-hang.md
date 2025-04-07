@@ -1,7 +1,6 @@
 ---
-'@journeyapps/parser-schema': minor
-'@journeyapps/db': minor
-'@journeyapps/evaluator': minor
+'@journeyapps/db': patch
+'@journeyapps/evaluator': patch
 ---
 
-Supporting work for Runtime V5
+Refactor `Batch`, `DatabaseObject` and `VariableFormatStringScope` to use `async` and return early.
