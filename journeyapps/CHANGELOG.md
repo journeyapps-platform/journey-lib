@@ -1,5 +1,12 @@
 # journeyapps
 
+## 7.3.16
+
+### Patch Changes
+
+- Updated dependencies [fda55dc]
+  - @journeyapps/db@8.1.0
+
 ## 7.3.15
 
 ### Patch Changes

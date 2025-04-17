@@ -1,5 +1,11 @@
 # @journeyapps/db
 
+## 8.1.0
+
+### Minor Changes
+
+- fda55dc: Fix missing browser export for primative types
+
 ## 8.0.14
 
 ### Patch Changes
