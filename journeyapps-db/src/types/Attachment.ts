@@ -138,13 +138,20 @@ export class Attachment {
     if (!this.present()) {
       throw new Error('Attachment is not present');
     }
-    const response = await fetch(this.url());
+    const response: Response = await fetch(this.url());
     if (!response.ok) {
       throw new Error('Attachment fetch failed: ' + response.statusText);
     }
 
-    // buffer() is present on node-fetch Response, but not the standard fetch Response.
-    this.data = (response as any).buffer();
+    if(typeof (response as any).buffer == 'function'){
+      // buffer() is present on node-fetch Response, but not the standard fetch Response.
+      this.data = (response as any).buffer();
+      return this.data;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    this.data = Buffer.from(arrayBuffer);
+
     return this.data;
   }
 
@@ -156,8 +163,9 @@ export class Attachment {
    * @throws an error if the attachment is not present, or a network error occurs.
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
-    const data = await this.toBuffer();
-    return data.buffer.slice(data.byteOffset, data.byteOffset + data.length);
+    const data: Buffer = await this.toBuffer();
+    const arrBuf: ArrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.length)as ArrayBuffer;
+    return arrBuf
   }
 
   /**
@@ -204,16 +212,22 @@ function toBuffer(options: { base64?: string; text?: string; data?: ArrayBuffer 
   if (options.data) {
     if (Buffer.isBuffer(options.data)) {
       return options.data;
-    } else if (options.data instanceof ArrayBuffer || options.data instanceof Uint8Array) {
-      return Buffer.from(options.data);
-    } else {
-      throw new Error('Invalid argument for "data"');
     }
-  } else if (options.text) {
-    return Buffer.from(options.text, 'utf8');
-  } else if (options.base64) {
-    return Buffer.from(options.base64, 'base64');
-  } else {
-    throw new Error('Invalid Attachment data');
+
+    if (options.data instanceof ArrayBuffer || options.data instanceof Uint8Array) {
+      return Buffer.from(options.data as Uint8Array);
+    }
+
+    throw new Error('Invalid argument for "data"');
   }
+
+  if (options.text) {
+    return Buffer.from(options.text, 'utf8');
+  }
+
+  if (options.base64) {
+    return Buffer.from(options.base64, 'base64');
+  }
+
+  throw new Error('Invalid Attachment data');
 }
