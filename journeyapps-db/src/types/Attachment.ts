@@ -27,7 +27,7 @@ export class Attachment {
     mediaType?: string;
     base64?: string;
     text?: string;
-    data?: ArrayBuffer | Uint8Array<any>;
+    data?: ArrayBuffer | Uint8Array;
   }): Promise<Attachment> {
     const attachment = new Attachment({ id: null, state: STATE.PENDING, urls: {} });
     attachment.data = toBuffer(options);
@@ -208,14 +208,14 @@ export class Attachment {
   }
 }
 
-function toBuffer(options: { base64?: string; text?: string; data?: ArrayBuffer | Uint8Array<any> }): Buffer {
+function toBuffer(options: { base64?: string; text?: string; data?: ArrayBuffer | Uint8Array }): Buffer {
   if (options.data) {
     if (Buffer.isBuffer(options.data)) {
       return options.data;
     }
 
     if (options.data instanceof ArrayBuffer || options.data instanceof Uint8Array) {
-      return Buffer.from(options.data as Uint8Array<any>);
+      return Buffer.from(options.data as Uint8Array);
     }
 
     throw new Error('Invalid argument for "data"');
