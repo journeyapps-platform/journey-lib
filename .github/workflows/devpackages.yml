@@ -11,7 +11,6 @@ on:
 env:
   SECRETS: ${{ toJSON(secrets) }}
   GITHUB_TOKEN: ${{ secrets.GH_SHARED_TOKEN_2 }}
-  PNPM_VERSION: 8
 
 jobs:
   build-and-publish:
@@ -31,8 +30,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install PNPM
-        run: npm i pnpm@$PNPM_VERSION -g
+      - name: Enable Corepack
+        run: |
+          npm install -g corepack@latest
+          corepack enable pnpm
 
       - name: Install Dependencies
         uses: ./.github/ci/actions/npm-install

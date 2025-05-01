@@ -1,5 +1,49 @@
 # @journeyapps/db
 
+## 8.1.0
+
+### Minor Changes
+
+- fda55dc: Fix missing browser export for primative types
+
+## 8.0.14
+
+### Patch Changes
+
+- d2e1526: Refactor `Batch`, `DatabaseObject` and `VariableFormatStringScope` to use `async` and return early.
+- Updated dependencies [f1f492c]
+- Updated dependencies [d2e1526]
+  - @journeyapps/parser-schema@8.2.5
+  - @journeyapps/evaluator@7.0.5
+  - @journeyapps/parser-common@8.0.7
+
+## 8.0.13
+
+### Patch Changes
+
+- Updated dependencies [9abb3f9]
+  - @journeyapps/evaluator@7.0.4
+  - @journeyapps/parser-common@8.0.6
+  - @journeyapps/parser-schema@8.2.4
+
+## 8.0.12
+
+### Patch Changes
+
+- Updated dependencies [a68b965]
+  - @journeyapps/evaluator@7.0.3
+  - @journeyapps/parser-common@8.0.5
+  - @journeyapps/parser-schema@8.2.3
+
+## 8.0.11
+
+### Patch Changes
+
+- Updated dependencies [16bb578]
+  - @journeyapps/evaluator@7.0.2
+  - @journeyapps/parser-common@8.0.4
+  - @journeyapps/parser-schema@8.2.2
+
 ## 8.0.10
 
 ### Patch Changes

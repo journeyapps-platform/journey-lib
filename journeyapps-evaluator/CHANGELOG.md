@@ -1,5 +1,29 @@
 # @journeyapps/evaluator
 
+## 7.0.5
+
+### Patch Changes
+
+- d2e1526: Refactor `Batch`, `DatabaseObject` and `VariableFormatStringScope` to use `async` and return early.
+
+## 7.0.4
+
+### Patch Changes
+
+- 9abb3f9: Improve parsing of await- and member expressions
+
+## 7.0.3
+
+### Patch Changes
+
+- a68b965: fix: Parsing AwaitExpression into FunctionTokenExpression and improve error handling in TokenExpressionParser when using Babel parser.
+
+## 7.0.2
+
+### Patch Changes
+
+- 16bb578: Fix: Add support for parsing `TemplateLiternal` expressions
+
 ## 7.0.1
 
 ### Patch Changes

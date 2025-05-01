@@ -122,7 +122,7 @@ export class ObjectType extends Type {
       attributes: this.attributes,
       belongsTo: belongsTo,
       hasMany: hasMany,
-      display: '' + this.displayFormat.toString()
+      display: '' + this.displayFormat?.toString()
     };
   }
 

@@ -81,7 +81,14 @@ export class TokenExpressionParser {
       return this.cache.get(source) as T;
     }
 
-    const { program } = babelParser.parse(source);
+    const { program, errors } = babelParser.parse(source, {
+      errorRecovery: true,
+      allowAwaitOutsideFunction: true,
+      allowReturnOutsideFunction: true
+    });
+    if (errors?.length > 0) {
+      console.warn(`[TokenExpressionParser] Error parsing source: ${source}`, errors);
+    }
     const node = program.body[0] ?? program.directives[0];
     const parsed = this.parseNode({ node, source: source, context: event.context });
     this.cache.set(source, parsed);
@@ -115,7 +122,7 @@ export class TokenExpressionParser {
         return factory.getParser();
       }
     }
-    console.error(`No parser found for node type '${nodeType}'`);
+    console.warn(`[TokenExpressionParser] No parser found for node type '${nodeType}', using FallbackExpressionParser`);
     return new FallbackExpressionParser();
   });
 

@@ -15,13 +15,14 @@ export * from './credentials/MobileCredentials';
 
 export * from './Schema';
 
+export * from './types/primitives';
+
 export * from './types/Type';
 export * from './types/GenericObject';
 export * from './types/ObjectData';
 export * from './types/ObjectType';
 export * from './types/ArrayType';
 export * from './types/QueryType';
-
 export * from './types/Location';
 export { Attachment } from './types/Attachment';
 
