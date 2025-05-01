@@ -1,5 +1,11 @@
 # @journeyapps/db
 
+## 8.1.1
+
+### Patch Changes
+
+- 13d5227: Added support for non `node-fetch` responses
+
 ## 8.1.0
 
 ### Minor Changes
