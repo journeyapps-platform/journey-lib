@@ -12,49 +12,34 @@ import { ShorthandExpression } from '../shorthand/ShorthandExpression';
 import { extract } from '../../tools';
 
 /**
- * Literal text and placeholder tokens. Every placeholder owns its typed expression.
+ * Text interleaved with typed placeholder expressions, such as `Hello {user.name}`
+ * or `Hello {user.name}, {$:getGreeting(true)}`. Plain text is also a valid format string.
+ * tokens preserves the complete source; parameters exposes the expressions inside placeholders.
+ * Doubled braces represent literal braces when rendered, for example `{{name}}` renders as `{name}`.
+ *
+ * @example
+ * ```ts
+ * const expression = FormatStringExpression.parse('Hello {user.name}, {$:getGreeting(true)}');
+ * expression.tokens; // TextToken, PlaceholderToken, TextToken, PlaceholderToken
+ * expression.parameters; // ShorthandExpression, FunctionExpression
+ * expression.stringify(); // 'Hello {user.name}, {$:getGreeting(true)}'
+ * ```
  */
 export class FormatStringExpression extends AbstractExpression<AbstractExpressionOptions, string> {
   static readonly TYPE = 'format-string';
-  private sourceIsValid: boolean;
 
   static parse(source: ExpressionSource, start = 0): FormatStringExpression {
     return requireExpression(new FormatStringExpressionParser(), source, start);
   }
 
   constructor(options: AbstractExpressionOptions) {
-    const source = options.expression ?? '';
-    let tokens = options.tokens;
-    let sourceIsValid = true;
-    if (tokens == null) {
-      try {
-        tokens = new FormatStringExpressionParser().tokens(source, options.start ?? 0);
-      } catch (error) {
-        if (!(error instanceof SyntaxError)) {
-          throw error;
-        }
-        tokens = [new TextToken(source, options.start ?? 0)];
-        sourceIsValid = false;
-      }
-    }
-    super(FormatStringExpression.TYPE, { ...options, expression: source, tokens });
-    this.sourceIsValid = sourceIsValid;
+    super(FormatStringExpression.TYPE, options);
   }
 
   isValid(): boolean {
-    return (
-      this.sourceIsValid &&
-      this.tokens.every(
-        (token) => token instanceof TextToken || (token instanceof PlaceholderToken && token.expression.isValid())
-      )
+    return this.tokens.every(
+      (token) => token instanceof TextToken || (token instanceof PlaceholderToken && token.expression.isValid())
     );
-  }
-
-  clone(): this {
-    const clone = super.clone();
-    // Invalid source is retained as text for inspection; cloning must preserve that parse result.
-    clone.sourceIsValid = this.sourceIsValid;
-    return clone;
   }
 
   get parameters(): readonly AbstractExpression[] {
@@ -223,6 +208,7 @@ export class FormatStringExpression extends AbstractExpression<AbstractExpressio
   text(): string {
     return this.stringify();
   }
+
   toString(): string {
     return this.stringify();
   }
@@ -233,6 +219,7 @@ export class FormatStringExpression extends AbstractExpression<AbstractExpressio
  */
 export class FormatStringExpressionParser implements ExpressionParser<FormatStringExpression> {
   tryParse(source: ExpressionSource, start = 0): FormatStringExpression {
+    source = source ?? '';
     let tokens: readonly AbstractToken[];
     if (typeof source === 'string') {
       tokens = this.tokens(source, start);
@@ -245,6 +232,7 @@ export class FormatStringExpressionParser implements ExpressionParser<FormatStri
     }
     return expression;
   }
+
   tokens(source: string, offset = 0): AbstractToken[] {
     const tokens: AbstractToken[] = [];
     let start = 0;

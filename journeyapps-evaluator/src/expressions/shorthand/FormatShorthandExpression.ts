@@ -8,25 +8,35 @@ export interface FormatShorthandExpressionOptions extends AbstractExpressionOpti
   format: string;
 }
 
+/**
+ * A shorthand reference with a format specifier, such as `price:.2f`.
+ * Commonly used inside a format-string placeholder, for example `{price:.2f}`.
+ * The scope resolves the reference before the format specifier is applied to its value.
+ *
+ * @example
+ * ```ts
+ * const expression = FormatShorthandExpression.parse('price:.2f');
+ * expression.expression; // 'price'
+ * expression.format; // '.2f'
+ * expression.stringify(); // 'price:.2f'
+ * ```
+ */
 export class FormatShorthandExpression extends ShorthandExpression<FormatShorthandExpressionOptions> {
   static readonly TYPE = 'format-shorthand-expression';
+
   static parse(source: ExpressionSource, start = 0): FormatShorthandExpression {
     return requireExpression(new FormatShorthandExpressionParser(), source, start);
   }
+
   constructor(options: FormatShorthandExpressionOptions) {
     super(options);
-    if (options.tokens == null) {
-      this.options.tokens = Object.freeze([
-        ...this.tokens,
-        new TextToken(`:${options.format}`, (options.start ?? 0) + options.expression.length)
-      ]);
-    }
     this.type = FormatShorthandExpression.TYPE;
   }
 
   isValid(): boolean {
     return super.isValid() && typeof this.format === 'string' && /^[\w.]+$/.test(this.format);
   }
+
   text(): string {
     return `${this.expression}:${this.format}`;
   }
@@ -50,7 +60,7 @@ export class FormatShorthandExpressionParser implements ExpressionParser<FormatS
         } else {
           tokens = source;
         }
-        expression = new FormatShorthandExpression({ expression: reference, format: match[1], tokens });
+        expression = new FormatShorthandExpression({ expression: shorthand.expression, format: match[1], tokens });
       }
     }
     return expression;

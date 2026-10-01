@@ -3,7 +3,7 @@ import { CombinedParser } from '../CombinedParser';
 import {
   AbstractExpression,
   EvaluatedExpressionParser,
-  NullExpressionParser,
+  ConstantExpressionParser,
   PrimitiveConstantExpressionParser,
   TextExpressionParser,
   FormatShorthandExpressionParser,
@@ -19,9 +19,9 @@ export function parseExpression(source: ExpressionSource, start = 0): AbstractEx
   return new CombinedParser<AbstractExpression>([
     new FunctionExpressionParser(),
     new EvaluatedExpressionParser(),
-    new NullExpressionParser(),
     new PrimitiveConstantExpressionParser(),
     new TextExpressionParser(true),
+    new ConstantExpressionParser(),
     new FormatShorthandExpressionParser(),
     new ShorthandExpressionParser()
   ]).tryParse(source, start);

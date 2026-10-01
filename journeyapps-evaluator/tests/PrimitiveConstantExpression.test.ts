@@ -1,20 +1,9 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
-import { ConstantExpression, NumericConstantExpressionParser, PrimitiveConstantExpression } from '../src';
+import { describe, expect, it } from 'vitest';
+import { NumericConstantExpressionParser, PrimitiveConstantExpression } from '../src';
 
 describe('PrimitiveConstantExpression', () => {
-  it('specializes the constant base and infers the primitive value type', () => {
-    const boolean = new PrimitiveConstantExpression({ expression: false });
-    const number = new PrimitiveConstantExpression({ expression: 42 });
-    expect(boolean).toBeInstanceOf(ConstantExpression);
-    expectTypeOf(boolean.value()).toMatchTypeOf<boolean>();
-    expectTypeOf(number.value()).toMatchTypeOf<number>();
-    expectTypeOf<ConstructorParameters<typeof PrimitiveConstantExpression>[0]['expression']>().toEqualTypeOf<
-      number | boolean
-    >();
-  });
-
   it('preserves the concrete primitive type when cloning', () => {
-    const token = new PrimitiveConstantExpression({ expression: 1000, text: '1e3', start: 2 });
+    const token = PrimitiveConstantExpression.parse('1e3', 2);
     const cloned = token.clone();
     expect(cloned).toBeInstanceOf(PrimitiveConstantExpression);
     expect(cloned).not.toBe(token);

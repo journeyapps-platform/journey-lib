@@ -12,7 +12,6 @@ import {
   ShorthandExpression,
   TextExpression,
   PrimitiveConstantExpression,
-  NullExpression,
   EvaluatedExpression,
   FormatShorthandExpression,
   JSToken,
@@ -25,7 +24,7 @@ describe('Expression parser composition', () => {
     ['1e3', 1000, PrimitiveConstantExpression],
     ["'it\\'s fine'", "it's fine", TextExpression],
     ['"Hello"', 'Hello', TextExpression],
-    ['null', null, NullExpression]
+    ['null', null, ConstantExpression]
   ])('preserves the syntax and typed value of %s', (source, value, Type) => {
     const expression = parseExpression(String(source)) as ConstantExpression;
     expect(expression).toBeInstanceOf(Type);
@@ -39,7 +38,7 @@ describe('Expression parser composition', () => {
       const expression = parseExpression(source) as ShorthandExpression;
       expect(expression).toBeInstanceOf(ShorthandExpression);
       expect(expression.tokens).toHaveLength(1);
-      expect(expression.js.ast.type).toMatch(/MemberExpression/);
+      expect((expression.code as JSToken).ast.type).toMatch(/MemberExpression/);
       expect(expression.stringify()).toBe(source);
     }
   );
@@ -58,12 +57,12 @@ describe('Expression parser composition', () => {
     const source = ' $:save("Hello", [true, user.name], {value: find(null)}) /* end */ ';
     const expression = FunctionExpression.parse(source);
     expect(expression.functionName()).toBe('save');
-    expect(expression.arguments.map((argument) => argument.type)).toEqual([
+    expect((expression.code as JSToken).arguments.map((argument) => argument.type)).toEqual([
       'StringLiteral',
       'ArrayExpression',
       'ObjectExpression'
     ]);
-    const object = expression.arguments[2];
+    const object = (expression.code as JSToken).arguments[2];
     expect(object.type).toBe('ObjectExpression');
     if (object.type === 'ObjectExpression' && object.properties[0].type === 'ObjectProperty') {
       expect(object.properties[0].value.type).toBe('CallExpression');
@@ -100,7 +99,7 @@ describe('Expression parser composition', () => {
     const tokens = [new PrefixToken(20), new JSToken('save(true)', 22)];
     const expression = new FunctionExpressionParser().tryParse(tokens);
     expect(expression.tokens).toEqual(tokens);
-    expect(expression.js).toBe(tokens[1]);
+    expect(expression.code).toBe(tokens[1]);
     expect(parseExpression(tokens)).toBeInstanceOf(FunctionExpression);
     expect(() => FunctionExpression.parse('true')).toThrow(SyntaxError);
     expect(() => FunctionExpression.parse('')).toThrow(SyntaxError);

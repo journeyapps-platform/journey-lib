@@ -9,12 +9,15 @@ export class PlaceholderToken extends AbstractToken {
     super(start);
     Object.freeze(this);
   }
+
   get children(): readonly AbstractToken[] {
     return this.expression.tokens;
   }
+
   stringify(): string {
     return `{${this.expression.stringify()}}`;
   }
+
   clone(): PlaceholderToken {
     return new PlaceholderToken(this.expression.clone(), this.start);
   }

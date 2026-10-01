@@ -11,11 +11,6 @@ export interface CodeLanguageParser<T> {
  * Shared code parsing and caching, independent of the language's syntax tree.
  */
 export class CodeParser {
-  private readonly cache = new Map<string, unknown>();
-  private readonly limit = 256;
-
-  private constructor() {}
-
   static getInstance(): CodeParser {
     const globals = globalThis as typeof globalThis & {
       __journeyappsCodeParser?: CodeParser;
@@ -26,6 +21,11 @@ export class CodeParser {
     }
     return globals.__journeyappsCodeParser;
   }
+
+  private readonly cache = new Map<string, unknown>();
+  private readonly limit = 256;
+
+  private constructor() {}
 
   /**
    * Releases cached results without affecting existing tokens.

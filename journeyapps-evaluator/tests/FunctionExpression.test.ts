@@ -6,9 +6,7 @@ describe('FunctionExpression', () => {
     const expression = FunctionExpression.parse('/* save */ $:save(true); // end');
     expect(expression.withArguments([]).stringify()).toBe('/* save */ $:save(); // end');
     expect(
-      expression
-        .withArguments([new TextExpression({ expression: 'one' }), new TextExpression({ expression: 'two' })])
-        .stringify()
+      expression.withArguments([TextExpression.deserialize('one'), TextExpression.deserialize('two')]).stringify()
     ).toBe("/* save */ $:save('one', 'two'); // end");
   });
   it('changes the call target without changing matching text in comments or arguments', () => {
@@ -19,7 +17,7 @@ describe('FunctionExpression', () => {
     const source = '$:save( /* first */ "before", find(true) )';
     const expression = FunctionExpression.parse(source);
     const updated = expression.withArguments([
-      new TextExpression({ expression: "it's after" }),
+      TextExpression.deserialize("it's after"),
       FunctionExpression.parse('$:find(false)')
     ]);
     expect(updated.stringify()).toBe("$:save( /* first */ 'it\\'s after', find(false) )");
@@ -37,7 +35,7 @@ describe('FunctionExpression', () => {
   });
   it('keeps parenthesized arguments and ignores punctuation inside comments when editing', () => {
     const expression = FunctionExpression.parse('$:save /* (comment) */ (first, (second, third))');
-    expect(expression.withArgumentSources([expression.js.sourceOf(expression.arguments[1])]).stringify()).toBe(
+    expect(expression.withArgumentSources([expression.code.sourceOf(expression.arguments[1])]).stringify()).toBe(
       '$:save /* (comment) */ ((second, third))'
     );
     expect(expression.withArguments([]).stringify()).toBe('$:save /* (comment) */ ()');
@@ -45,7 +43,7 @@ describe('FunctionExpression', () => {
   it('owns its Babel tree when cloned', () => {
     const expression = FunctionExpression.parse('$:save(find(true))');
     const clone = expression.clone();
-    expect(clone.js.ast).not.toBe(expression.js.ast);
+    expect((clone.code as JSToken).ast).not.toBe((expression.code as JSToken).ast);
     expect(clone.arguments[0]).not.toBe(expression.arguments[0]);
     expect(clone.stringify()).toBe(expression.stringify());
   });

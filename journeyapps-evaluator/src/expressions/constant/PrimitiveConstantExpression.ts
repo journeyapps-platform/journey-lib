@@ -2,17 +2,29 @@ import { ExpressionParser } from '../../ExpressionParser';
 import { requireExpression } from '../../utils/parserUtils';
 import { ConstantExpression, ConstantExpressionParser } from './ConstantExpression';
 import { AbstractExpressionOptions } from '../AbstractExpression';
-import { ExpressionSource, stringify } from '../../tokens';
+import { ExpressionSource, LiteralToken, stringify } from '../../tokens';
 
 export type PrimitiveConstantValue = number | boolean;
 
+/**
+ * A number or boolean constant, such as `42`, `-1e3`, `true` or `false`.
+ * Its stored value is independent of the original spelling retained by its literal token.
+ *
+ * @example
+ * ```ts
+ * PrimitiveConstantExpression.parse('-1e3').value(); // -1000
+ * PrimitiveConstantExpression.parse('false').value(); // false
+ * ```
+ */
 export class PrimitiveConstantExpression<
   V extends PrimitiveConstantValue = PrimitiveConstantValue
 > extends ConstantExpression<V> {
   static readonly TYPE = 'primitive-constant-expression';
+
   static parse(source: ExpressionSource, start = 0): PrimitiveConstantExpression {
     return requireExpression(new PrimitiveConstantExpressionParser(), source, start);
   }
+
   constructor(options: AbstractExpressionOptions<V>) {
     super(options);
     this.type = PrimitiveConstantExpression.TYPE;
@@ -53,6 +65,11 @@ export class NumericConstantExpressionParser implements ExpressionParser<Primiti
     if (typeof source !== 'string' && source.length > 0) {
       start = source[0].start;
     }
-    return new PrimitiveConstantExpression({ expression: value, text, start });
+    return new PrimitiveConstantExpression({
+      expression: value,
+      text,
+      start,
+      tokens: [new LiteralToken(text, value, start)]
+    });
   }
 }

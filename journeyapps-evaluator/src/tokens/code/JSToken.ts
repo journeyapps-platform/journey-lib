@@ -8,42 +8,17 @@ import {
   program,
   expressionStatement
 } from '@babel/types';
-import { CodeToken } from './CodeToken';
+import { CodeToken, CodeReference } from './CodeToken';
+import { AbstractToken } from '../AbstractToken';
+import { TextToken } from '../text/TextToken';
 import { CodeParser } from '../../code-parsers/CodeParser';
 import { JavaScriptParser } from '../../code-parsers/JavaScriptParser';
-
-/**
- * An unbound variable reference or direct function call, without Babel traversal objects.
- * Call arguments contain the substitutions already made inside their source.
- */
-export interface JSReference {
-  readonly name: string;
-  readonly isCall: boolean;
-  readonly arguments: readonly CodeToken[];
-}
-
-/**
- * Spread arguments are valid call syntax, rather than standalone JavaScript expressions.
- */
-class SpreadArgumentToken extends CodeToken {
-  readonly code: string;
-
-  constructor(source: string, start: number) {
-    super(source, start);
-    this.code = source;
-    Object.freeze(this);
-  }
-
-  clone(): SpreadArgumentToken {
-    return this;
-  }
-}
 
 /**
  * JavaScript stays as one source token containing Babel's tree, without a second expression tree.
  * Babel node offsets are relative to this token's source; start locates it in the surrounding source.
  */
-export class JSToken extends CodeToken {
+export class JSToken extends CodeToken<CallExpression['arguments'][number]> {
   private static readonly parser = new JavaScriptParser();
   readonly ast: Expression;
   readonly code: string;
@@ -63,11 +38,17 @@ export class JSToken extends CodeToken {
   get arguments(): CallExpression['arguments'] {
     return this.call().arguments;
   }
+
   functionName(): string {
     return this.sourceOf(this.call().callee);
   }
+
   isCallExpression(): boolean {
     return this.ast.type === 'CallExpression' || this.ast.type === 'OptionalCallExpression';
+  }
+
+  isReferenceExpression(): boolean {
+    return ['Identifier', 'MemberExpression', 'OptionalMemberExpression'].includes(this.ast.type);
   }
 
   withName(name: string): JSToken {
@@ -97,7 +78,7 @@ export class JSToken extends CodeToken {
    * Rewrite unbound references and direct calls, retaining scopes, property names and source trivia.
    * Return null to leave a reference unchanged. Replacement source is not visited again.
    */
-  rewriteReferences(rewrite: (reference: JSReference) => JSToken | null): JSToken {
+  rewriteReferences(rewrite: (reference: CodeReference) => CodeToken | null): JSToken {
     const edits: { start: number; end: number; text: string }[] = [];
     const render = (start: number, end: number): string => {
       let source = this.source.slice(start, end);
@@ -108,8 +89,14 @@ export class JSToken extends CodeToken {
       }
       return source;
     };
-    const replacementSource = (replacement: JSToken, parent: Node): string => {
-      let source = replacement.code;
+    const replacementSource = (replacement: CodeToken, parent: Node): string => {
+      let javascript: JSToken;
+      if (replacement instanceof JSToken) {
+        javascript = replacement;
+      } else {
+        javascript = new JSToken(replacement.code);
+      }
+      let source = javascript.code;
       // A replacement must keep its precedence in a larger expression. Atomic values and calls
       // need no wrapper; compound expressions do, unless their source is already parenthesized.
       const atomic = [
@@ -128,13 +115,13 @@ export class JSToken extends CodeToken {
         'ThisExpression'
       ];
       const numericMember =
-        replacement.ast.type === 'NumericLiteral' &&
+        javascript.ast.type === 'NumericLiteral' &&
         (parent.type === 'MemberExpression' || parent.type === 'OptionalMemberExpression');
       const constructorCallee =
-        parent.type === 'NewExpression' && !['Identifier', 'MemberExpression'].includes(replacement.ast.type);
+        parent.type === 'NewExpression' && !['Identifier', 'MemberExpression'].includes(javascript.ast.type);
       if (
-        (!atomic.includes(replacement.ast.type) || numericMember || constructorCallee) &&
-        !replacement.ast.extra?.parenthesized
+        (!atomic.includes(javascript.ast.type) || numericMember || constructorCallee) &&
+        !javascript.ast.extra?.parenthesized
       ) {
         source = `(${source})`;
       }
@@ -143,15 +130,15 @@ export class JSToken extends CodeToken {
     const replaceCall = (path: NodePath<CallExpression | OptionalCallExpression>): void => {
       const node = path.node;
       if (node.callee.type === 'Identifier' && !path.scope.hasBinding(node.callee.name, true)) {
-        const args = node.arguments.map((argument): CodeToken => {
+        const args = node.arguments.map((argument): AbstractToken => {
           let start = argument.start;
           if (argument.extra?.parenthesized) {
             start = argument.extra.parenStart as number;
           }
           const source = render(start, start + this.sourceOf(argument).length);
-          let token: CodeToken;
+          let token: AbstractToken;
           if (argument.type === 'SpreadElement') {
-            token = new SpreadArgumentToken(source, this.start + start);
+            token = new TextToken(source, this.start + start);
           } else {
             token = new JSToken(source, this.start + start);
           }

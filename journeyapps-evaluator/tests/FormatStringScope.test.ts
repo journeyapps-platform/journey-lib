@@ -11,11 +11,11 @@ declare module 'vitest' {
 }
 
 function evaluate(expression: string, scope: VariableScope) {
-  return new FormatStringExpression({ expression }).evaluate(new VariableFormatStringScope(scope));
+  return FormatStringExpression.parse(expression).evaluate(new VariableFormatStringScope(scope));
 }
 
 function evaluatePromise(expression: string, scope: VariableScope) {
-  return new FormatStringExpression({ expression }).evaluatePromise(new VariableFormatStringScope(scope));
+  return FormatStringExpression.parse(expression).evaluatePromise(new VariableFormatStringScope(scope));
 }
 
 describe('Evaluate', () => {

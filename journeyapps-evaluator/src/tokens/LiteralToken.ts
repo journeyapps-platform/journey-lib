@@ -6,16 +6,6 @@ export type LiteralValue = string | number | boolean | null;
  * A literal's value and original spelling, without a JavaScript AST.
  */
 export class LiteralToken extends AbstractToken {
-  constructor(readonly source: string, readonly value: LiteralValue, start = 0) {
-    super(start);
-    Object.freeze(this);
-  }
-  stringify(): string {
-    return this.source;
-  }
-  clone(): this {
-    return this;
-  }
   static fromValue(value: LiteralValue, start = 0): LiteralToken {
     let source: string;
     if (typeof value === 'string') {
@@ -31,5 +21,18 @@ export class LiteralToken extends AbstractToken {
       source = String(value);
     }
     return new LiteralToken(source, value, start);
+  }
+
+  constructor(readonly source: string, readonly value: LiteralValue, start = 0) {
+    super(start);
+    Object.freeze(this);
+  }
+
+  stringify(): string {
+    return this.source;
+  }
+
+  clone(): this {
+    return this;
   }
 }

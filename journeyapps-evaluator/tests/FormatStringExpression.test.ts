@@ -27,7 +27,7 @@ describe('FormatStringExpression', () => {
       FunctionExpression
     ]);
     const call = expression.parameters[1] as FunctionExpression;
-    expect(call.arguments[0].type).toBe('BooleanLiteral');
+    expect(call.code.sourceOf(call.arguments[0])).toBe('true');
     expect(expression.tokens.map((token) => token.constructor)).toEqual([
       TextToken,
       PlaceholderToken,
@@ -38,8 +38,8 @@ describe('FormatStringExpression', () => {
     expect(placeholder.expression).toBe(call);
     expect(placeholder.children.map((token) => token.constructor)).toEqual([PrefixToken, JSToken]);
     expect(placeholder.start).toBe(source.indexOf('{$:'));
-    expect(call.js.start).toBe(source.indexOf('getGreeting'));
-    expect(call.js.source.slice(call.arguments[0].start, call.arguments[0].end)).toBe('true');
+    expect(call.code.start).toBe(source.indexOf('getGreeting'));
+    expect(call.code.sourceOf(call.arguments[0])).toBe('true');
     expect(expression.stringify()).toBe(source);
   });
 
@@ -98,10 +98,10 @@ describe('FormatStringExpression', () => {
   it('encodes constructed text and expressions for their destination syntax', () => {
     const expression = FormatStringExpression.parse([
       TextToken.fromValue('Hello {literal} '),
-      new PlaceholderToken(new ShorthandExpression({ expression: 'person.name' })),
+      new PlaceholderToken(ShorthandExpression.parse('person.name')),
       new TextToken(' '),
       new PlaceholderToken(FunctionExpression.parse('$:greet("world")')),
-      new PlaceholderToken(new TextExpression({ expression: "it's fine" }))
+      new PlaceholderToken(TextExpression.deserialize("it's fine"))
     ]);
     expect(expression.stringify()).toBe("Hello {{literal}} {person.name} {$:greet(\"world\")}{'it\\'s fine'}");
     expect(expression.parameters).toHaveLength(3);
@@ -110,10 +110,8 @@ describe('FormatStringExpression', () => {
   it('replaces parameters without changing source text outside their placeholders', () => {
     const expression = FormatStringExpression.parse('Hello {{literal}} {user.name}, {$:greet(true)}!');
     const updated = expression.withParameters([
-      new TextExpression({ expression: 'Dylan' }),
-      (expression.parameters[1] as FunctionExpression).withArguments([
-        new PrimitiveConstantExpression({ expression: false })
-      ])
+      TextExpression.deserialize('Dylan'),
+      (expression.parameters[1] as FunctionExpression).withArguments([PrimitiveConstantExpression.deserialize(false)])
     ]);
     expect(updated.stringify()).toBe("Hello {{literal}} {'Dylan'}, {$:greet(false)}!");
     expect(expression.stringify()).toBe('Hello {{literal}} {user.name}, {$:greet(true)}!');
@@ -125,8 +123,8 @@ describe('FormatStringExpression', () => {
     const clone = expression.clone();
     expect(clone.parameters[0]).not.toBe(expression.parameters[0]);
     expect(clone.tokens[0]).toBe(expression.tokens[0]);
-    expect((clone.parameters[0] as FunctionExpression).js.ast).not.toBe(
-      (expression.parameters[0] as FunctionExpression).js.ast
+    expect(((clone.parameters[0] as FunctionExpression).code as JSToken).ast).not.toBe(
+      ((expression.parameters[0] as FunctionExpression).code as JSToken).ast
     );
     expect(clone.stringify()).toBe(expression.stringify());
   });

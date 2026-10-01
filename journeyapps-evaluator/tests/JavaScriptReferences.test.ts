@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { JSToken, JSReference } from '../src';
+import { JSToken, CodeReference } from '../src';
 
-function replaceMessage(reference: JSReference): JSToken | null {
+function replaceMessage(reference: CodeReference): JSToken | null {
   let replacement: JSToken | null = null;
   if (reference.name === 'message') {
     replacement = new JSToken("'Hello'");

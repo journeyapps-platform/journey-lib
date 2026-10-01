@@ -5,7 +5,6 @@ import {
   FormatShorthandExpressionParser,
   FormatStringExpressionParser,
   FunctionExpressionParser,
-  NullExpressionParser,
   PrimitiveConstantExpressionParser,
   ShorthandExpressionParser,
   TextExpressionParser,
@@ -15,7 +14,6 @@ import {
   FormatShorthandExpression,
   FormatStringExpression,
   FunctionExpression,
-  NullExpression,
   PrimitiveConstantExpression,
   ShorthandExpression,
   TextExpression,
@@ -27,7 +25,7 @@ const cases = [
   [TextExpression, "'it\\'s fine'"],
   [ConstantExpression, 'true'],
   [PrimitiveConstantExpression, '-1e3'],
-  [NullExpression, 'null'],
+  [ConstantExpression, 'null'],
   [EvaluatedExpression, '$:[true, "text", user.name]'],
   [EvaluatedExpression, '$:[1,,3]'],
   [FunctionExpression, '$:save({value: ready ? 1 : 2}, /a,b/.test(name))'],
@@ -47,7 +45,6 @@ const parsers = {
   FormatShorthandExpression: new FormatShorthandExpressionParser(),
   FormatStringExpression: new FormatStringExpressionParser(),
   FunctionExpression: new FunctionExpressionParser(),
-  NullExpression: new NullExpressionParser(),
   PrimitiveConstantExpression: new PrimitiveConstantExpressionParser(),
   ShorthandExpression: new ShorthandExpressionParser(),
   TextExpression: new TextExpressionParser()
@@ -76,8 +73,7 @@ describe('Expression parsing', () => {
   );
 
   const invalid = [
-    [NullExpression, 'false'],
-    [NullExpression, 'null trailing'],
+    [ConstantExpression, 'null trailing'],
     [PrimitiveConstantExpression, 'user.age'],
     [PrimitiveConstantExpression, '1 + 2'],
     [ConstantExpression, 'save()'],
@@ -121,7 +117,6 @@ describe('Expression parsing', () => {
 
   it('exposes concrete return types at the static parsing entry points', () => {
     expectTypeOf(TextExpression.parse('hello')).toEqualTypeOf<TextExpression>();
-    expectTypeOf(NullExpression.parse('null')).toEqualTypeOf<NullExpression>();
     expectTypeOf(EvaluatedExpression.parse('$:[]')).toEqualTypeOf<EvaluatedExpression>();
     expectTypeOf(EvaluatedExpression.parse('$:{}')).toEqualTypeOf<EvaluatedExpression>();
     expectTypeOf(FunctionExpression.parse('$:save()')).toEqualTypeOf<FunctionExpression>();

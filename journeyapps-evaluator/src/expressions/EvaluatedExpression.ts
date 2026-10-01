@@ -16,31 +16,26 @@ import {
 import { FormatStringScope } from '../definitions/FormatStringScope';
 
 /**
- * Journey's explicitly prefixed code, interpreted by its language-specific token.
+ * Code explicitly marked for evaluation by the `$:` prefix.
+ * Examples include `$:count + 1`, `$:true`, `$:{name: user.name}` and `$:[1, 2]`.
+ * The code token owns the language's syntax tree; the supplied scope executes its code.
+ * Prefixed calls are specialized by FunctionExpression when using the combined parser.
+ *
+ * @example
+ * ```ts
+ * EvaluatedExpression.parse('$:count + 1').text(); // 'count + 1'
+ * EvaluatedExpression.parse('$:{active: true}').stringify(); // '$:{active: true}'
+ * ```
  */
 export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOptions> {
   static TYPE = 'evaluated-expression';
+
   static parse(source: ExpressionSource, start = 0): EvaluatedExpression {
     return requireExpression(new EvaluatedExpressionParser(), source, start);
   }
 
   constructor(options: AbstractExpressionOptions) {
-    let tokens = options.tokens;
-    if (tokens == null) {
-      try {
-        tokens = new EvaluatedExpressionParser().sourceTokens(options.expression, options.start ?? 0);
-      } catch (error) {
-        if (!(error instanceof SyntaxError)) {
-          throw error;
-        }
-        tokens = [new TextToken(options.expression, options.start ?? 0)];
-      }
-    }
-    super(EvaluatedExpression.TYPE, { ...options, tokens });
-    const code = tokens.find((token): token is CodeToken => token instanceof CodeToken);
-    if (code) {
-      this.expression = code.code;
-    }
+    super(EvaluatedExpression.TYPE, options);
   }
 
   isValid(): boolean {
@@ -60,6 +55,7 @@ export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOp
     const Type = this.constructor as new (options: AbstractExpressionOptions) => this;
     return new Type({
       ...this.options,
+      expression: token.code,
       tokens: this.tokens.map((current) => {
         let replacement = current;
         if (current === original) {
@@ -73,6 +69,7 @@ export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOp
   text(): string {
     return this.expression;
   }
+
   async evaluatePromise(scope: FormatStringScope) {
     return scope.evaluateFunctionExpression(this.expression);
   }
@@ -97,7 +94,10 @@ export class EvaluatedExpressionParser implements ExpressionParser<EvaluatedExpr
       } else {
         tokens = source;
       }
-      expression = new EvaluatedExpression({ expression: '', tokens });
+      expression = new EvaluatedExpression({
+        expression: tokens.find((token): token is CodeToken => token instanceof CodeToken)?.code ?? '',
+        tokens
+      });
       if (!expression.isValid()) {
         throw new SyntaxError('Expected a prefixed code expression.');
       }

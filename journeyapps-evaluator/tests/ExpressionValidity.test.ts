@@ -16,31 +16,13 @@ import {
  */
 describe('Expression validity', () => {
   it.each([
-    [EvaluatedExpression, '$:true', 'true'],
-    [FunctionExpression, '$:save()', '$:true'],
-    [ShorthandExpression, 'user.name', 'save()'],
-    [FormatStringExpression, 'Hello {user.name}', 'Hello {}']
-  ] as const)(
-    'inspects valid and invalid %s source without constructor validation exceptions',
-    (Type, valid, invalid) => {
-      const expression = new Type({ expression: valid });
-      expect(expression.isValid()).toBe(true);
-      const other = new Type({ expression: invalid });
-      expect(other.stringify()).toBe(invalid);
-      expect(other.isValid()).toBe(false);
-      expect(other.clone().isValid()).toBe(false);
-    }
-  );
-
-  it.each([EvaluatedExpression, FunctionExpression, ShorthandExpression, FormatStringExpression])(
-    'retains malformed source for explicit validation: %s',
-    (Type) => {
-      const source = Type === FormatStringExpression ? '{$:save(}' : '$:save(';
-      const expression = new Type({ expression: source });
-      expect(expression.stringify()).toBe(source);
-      expect(expression.isValid()).toBe(false);
-    }
-  );
+    [EvaluatedExpression, '$:save('],
+    [FunctionExpression, '$:save('],
+    [ShorthandExpression, 'save('],
+    [FormatStringExpression, '{$:save(}']
+  ] as const)('leaves malformed source handling to the parser: %s', (Type, source) => {
+    expect(() => Type.parse(source)).toThrow(SyntaxError);
+  });
 
   it('validates supplied token structure and nested placeholders', () => {
     const call = new FunctionExpression({ expression: '', tokens: [new PrefixToken(), new JSToken('true')] });
@@ -53,7 +35,15 @@ describe('Expression validity', () => {
     expect(format.isValid()).toBe(false);
     expect(new FormatStringExpression({ expression: '', tokens: [new JSToken('save()')] }).isValid()).toBe(false);
     expect(new ShorthandExpression({ expression: '', tokens: [new TextToken('user.name')] }).isValid()).toBe(false);
-    expect(new FormatShorthandExpression({ expression: 'user.name', format: '.2f' }).isValid()).toBe(true);
-    expect(new FormatShorthandExpression({ expression: 'save()', format: '' }).isValid()).toBe(false);
+    expect(
+      new FormatShorthandExpression({
+        expression: 'user.name',
+        format: '.2f',
+        tokens: [new JSToken('user.name'), new TextToken(':.2f')]
+      }).isValid()
+    ).toBe(true);
+    expect(
+      new FormatShorthandExpression({ expression: 'save()', format: '', tokens: [new JSToken('save()')] }).isValid()
+    ).toBe(false);
   });
 });

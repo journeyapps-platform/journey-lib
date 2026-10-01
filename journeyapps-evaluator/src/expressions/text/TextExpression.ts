@@ -4,11 +4,25 @@ import { ConstantExpression, LiteralConstantValue, ConstantExpressionParser } fr
 import { AbstractExpressionOptions } from '../AbstractExpression';
 import { ExpressionSource, TextToken, stringify } from '../../tokens';
 
+/**
+ * A constant string, such as plain `hello` or the quoted literal `'hello'`.
+ * Text is not interpolated: `Hello {user.name}` remains a literal string in this expression type.
+ * Parsing decodes quoted literals; deserialize() creates a quoted literal token from a string value.
+ *
+ * @example
+ * ```ts
+ * TextExpression.parse("'hello'").value(); // 'hello'
+ * TextExpression.parse('Hello {user.name}').value(); // 'Hello {user.name}'
+ * TextExpression.deserialize('hello').stringify(); // "'hello'"
+ * ```
+ */
 export class TextExpression extends ConstantExpression<string> {
   static TYPE = 'text-expression';
+
   static parse(source: ExpressionSource, start = 0): TextExpression {
     return requireExpression(new TextExpressionParser(), source, start);
   }
+
   constructor(options: AbstractExpressionOptions<string>) {
     super(options);
     this.type = TextExpression.TYPE;
@@ -17,11 +31,13 @@ export class TextExpression extends ConstantExpression<string> {
   isValid(): boolean {
     return super.isValid() && typeof this.expression === 'string';
   }
+
   text(): string {
     return this.value();
   }
+
   concat(value: ConstantExpression<LiteralConstantValue>): TextExpression {
-    return new TextExpression({ expression: this.value() + String(value.value()), start: this.start });
+    return TextExpression.deserialize(this.value() + String(value.value()), this.start);
   }
 }
 
@@ -30,6 +46,7 @@ export class TextExpression extends ConstantExpression<string> {
  */
 export class TextExpressionParser implements ExpressionParser<TextExpression> {
   constructor(readonly quotedOnly = false) {}
+
   tryParse(source: ExpressionSource, start = 0): TextExpression | null {
     let expression: TextExpression | null = null;
     if (!this.quotedOnly && typeof source === 'string' && !/^\s*['"]/.test(source)) {

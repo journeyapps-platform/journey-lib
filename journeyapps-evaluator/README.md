@@ -8,7 +8,6 @@
 | --- | --- | --- |
 | `ConstantExpression<T>` | `42`, `true`, `null`, `'hello'` | A typed literal value. Read the value with `value()` and reproduce its syntax with `stringify()`. |
 | `PrimitiveConstantExpression<T>` | `42`, `false` | A number or boolean constant. `NumericConstantExpressionParser` specializes parsing for numeric attributes. |
-| `NullExpression` | `null` | A constant whose value is always `null`. |
 | `TextExpression` | `hello`, `'hello'` | A constant string. `TextExpressionParser` decodes quoted literals; `RawTextExpressionParser` preserves input exactly as text. |
 | `ShorthandExpression` | `user.name`, `items[0].name` | A reference resolved through the scope. Bare function calls and arithmetic are not shorthand references. |
 | `FormatShorthandExpression` | `price:.2f` | A shorthand reference with a format specifier, commonly used inside `{price:.2f}`. |
@@ -18,7 +17,9 @@
 
 `AbstractExpression` is the shared base. Every expression owns source tokens and supports `stringify()`, `clone()`, `isValid()`, and `evaluatePromise(scope)`.
 
-`TextExpression`, `PrimitiveConstantExpression`, and `NullExpression` extend `ConstantExpression`. `FunctionExpression` extends `EvaluatedExpression`, and `FormatShorthandExpression` extends `ShorthandExpression`.
+`TextExpression` and `PrimitiveConstantExpression` extend `ConstantExpression`. `FunctionExpression` extends `EvaluatedExpression`, and `FormatShorthandExpression` extends `ShorthandExpression`.
+
+Null literals use `ConstantExpression<null>`; there is no separate null expression class. Field parsers determine whether null is accepted.
 
 Executable code requires `$:`. Arrays, objects, and conditional expressions live inside the code token's Babel AST; they do not have separate Journey expression classes. A shorthand such as `user.name` can omit the prefix because it identifies a value to retrieve.
 
@@ -54,6 +55,14 @@ numberParser.tryParse('hello');       // null
 
 `tryParse()` returns `null` for unrecognized syntax but can throw for malformed syntax belonging to that parser. Static `parse()` requires a match and throws if none is found. Directly constructed or edited expressions can be checked with `isValid()`.
 
+Constructors require prepared `tokens` and a resolved `expression` value; they do not parse source or create fallback tokens. Use `parse()` for source syntax, and `deserialize()` on constant expressions for existing values:
+
+```ts
+TextExpression.parse("'hello'"); // Decode a quoted source literal
+TextExpression.deserialize('hello'); // Create a string value with a quoted literal token
+PrimitiveConstantExpression.deserialize(false); // Create a boolean value and its literal token
+```
+
 ## Format strings and source tokens
 
 ```ts
@@ -87,8 +96,8 @@ FormatStringExpression
 
 ## Code parsing and editing
 
-`CodeToken` defines the language-neutral code contract; `JSToken` supplies the JavaScript implementation and Babel AST. Function arguments remain Babel nodes. Use `withArguments()` for Journey expression inputs or `withArgumentSources()` for JavaScript source inputs.
+`CodeToken` defines the language-neutral contract for call and reference classification, call inspection, editing, and reference rewriting. `JSToken` supplies the JavaScript implementation and Babel AST. Argument representations belong to the language implementation; use `expression.code.sourceOf(argument)` to read their source. JavaScript arguments remain Babel nodes, accessible through `JSToken` when AST inspection is needed. Use `withArguments()` for Journey expression inputs or `withArgumentSources()` for source in the token's language.
 
-`JSToken.rewriteReferences()` supports scope-aware replacement of unbound references and direct calls while preserving local bindings and source formatting.
+`CodeToken.rewriteReferences()` exposes unbound references and direct calls through `CodeReference`, with source tokens for call arguments. Its JavaScript implementation preserves local bindings and source formatting.
 
 `CodeParser` caches parsing by language and source through a singleton on `globalThis`. Each occurrence receives an independent tree and offsets. Call `CodeParser.getInstance().clear()` after a parsing batch to release cached results without affecting existing expressions.

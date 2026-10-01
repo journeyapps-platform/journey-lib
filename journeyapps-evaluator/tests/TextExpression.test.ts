@@ -6,7 +6,7 @@ import { ConstantExpression, RawTextExpressionParser, TextExpression } from '../
  */
 describe('TextExpression', () => {
   it('represents plain text independently from literal source quoting', () => {
-    const text = new TextExpression({ expression: 'Hello', text: '"Hello"' });
+    const text = TextExpression.parse('"Hello"');
     expect(text).toBeInstanceOf(ConstantExpression);
     expectTypeOf(text.value()).toEqualTypeOf<string>();
     expect(text.text()).toBe('Hello');
@@ -14,7 +14,7 @@ describe('TextExpression', () => {
   });
 
   it('escapes characters that would change the surrounding expression', () => {
-    const text = new TextExpression({ expression: "It's\na \\ path\r" });
+    const text = TextExpression.deserialize("It's\na \\ path\r");
     expect(text.stringify()).toBe("'It\\'s\\na \\\\ path\\r'");
   });
 
@@ -30,8 +30,8 @@ describe('TextExpression', () => {
   });
 
   it('concatenates text into a fresh constant while keeping the first source position', () => {
-    const text = new TextExpression({ expression: 'Count ', start: 3 });
-    const combined = text.concat(new ConstantExpression({ expression: 2 }));
+    const text = TextExpression.deserialize('Count ', 3);
+    const combined = text.concat(ConstantExpression.deserialize(2));
     expect(combined).toBeInstanceOf(TextExpression);
     expect(combined.value()).toBe('Count 2');
     expect(combined.start).toBe(3);

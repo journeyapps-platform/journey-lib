@@ -3,35 +3,6 @@ import { TypeInterface } from './TypeInterface';
 import { VariableScope } from './VariableScope';
 
 export class VariableFormatStringScope implements FormatStringScope {
-  variableScope: VariableScope;
-
-  constructor(variableScope: VariableScope) {
-    this.variableScope = variableScope;
-  }
-
-  getExpressionType(expression: string): TypeInterface {
-    if (this.variableScope.type == null) {
-      // Mostly for tests, which are too lazy to define this.
-      return null;
-    }
-    return this.variableScope.type.getType(expression);
-  }
-
-  getValue(expression: string) {
-    if (expression.length > 0 && expression[0] == '?') {
-      expression = expression.substring(1);
-    }
-    return VariableFormatStringScope.getValue(this.variableScope, expression);
-  }
-
-  getValuePromise(expression: string): Promise<any> {
-    return VariableFormatStringScope.getValuePromise(this.variableScope, expression);
-  }
-
-  evaluateFunctionExpression(_expression: string): Promise<any> {
-    throw new Error('Not supported');
-  }
-
   static getValue(scope: VariableScope, expression: string, depth?: number): any {
     return VariableFormatStringScope.retrieveValue(scope, expression, depth, false);
   }
@@ -104,5 +75,34 @@ export class VariableFormatStringScope implements FormatStringScope {
         return val;
       }
     }
+  }
+
+  variableScope: VariableScope;
+
+  constructor(variableScope: VariableScope) {
+    this.variableScope = variableScope;
+  }
+
+  getExpressionType(expression: string): TypeInterface {
+    if (this.variableScope.type == null) {
+      // Mostly for tests, which are too lazy to define this.
+      return null;
+    }
+    return this.variableScope.type.getType(expression);
+  }
+
+  getValue(expression: string) {
+    if (expression.length > 0 && expression[0] == '?') {
+      expression = expression.substring(1);
+    }
+    return VariableFormatStringScope.getValue(this.variableScope, expression);
+  }
+
+  getValuePromise(expression: string): Promise<any> {
+    return VariableFormatStringScope.getValuePromise(this.variableScope, expression);
+  }
+
+  evaluateFunctionExpression(_expression: string): Promise<any> {
+    throw new Error('Not supported');
   }
 }

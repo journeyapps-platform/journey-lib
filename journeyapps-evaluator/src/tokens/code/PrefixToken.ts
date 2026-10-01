@@ -7,9 +7,11 @@ export class PrefixToken extends AbstractToken {
     super(start);
     Object.freeze(this);
   }
+
   stringify(): string {
     return FUNCTION_PREFIX;
   }
+
   clone(): this {
     return this;
   }

@@ -30,8 +30,8 @@ describe('Source token trees', () => {
     expect(tree.stringify()).toBe('Before {$:save(true)} after');
     expect(placeholder.children).toBe(expression.tokens);
     expect(placeholder.end).toBe(33);
-    expect(expression.js.start).toBe(22);
-    expect(expression.js.ast.type).toBe('CallExpression');
+    expect(expression.code.start).toBe(22);
+    expect((expression.code as JSToken).ast.type).toBe('CallExpression');
   });
 
   it.each([

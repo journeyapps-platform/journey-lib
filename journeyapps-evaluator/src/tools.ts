@@ -13,7 +13,7 @@ export function formatString(expression: string): FormatStringExpression | null 
   if (expression == null) {
     return null;
   } else {
-    return new FormatStringExpression({ expression });
+    return FormatStringExpression.parse(expression);
   }
 }
 

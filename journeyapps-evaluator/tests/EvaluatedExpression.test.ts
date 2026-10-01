@@ -12,14 +12,62 @@ import {
 /**
  * A test language token with no JavaScript parser or AST.
  */
-class QueryToken extends CodeToken {
+class QueryToken extends CodeToken<string> {
+  readonly arguments: readonly string[] = [];
   readonly code: string;
   constructor(source: string, start = 0) {
     super(source, start);
     this.code = source.trim();
   }
+  isCallExpression(): boolean {
+    return false;
+  }
+  isReferenceExpression(): boolean {
+    return false;
+  }
+  functionName(): string {
+    throw new Error('Queries do not have a function name.');
+  }
+  sourceOf(argument: string): string {
+    return argument;
+  }
+  withName(_name: string): QueryToken {
+    throw new Error('Queries do not support call edits.');
+  }
+  withArguments(_args: readonly string[]): QueryToken {
+    throw new Error('Queries do not support call edits.');
+  }
+  rewriteReferences(): QueryToken {
+    return this.clone();
+  }
   clone(): QueryToken {
     return new QueryToken(this.source, this.start);
+  }
+}
+
+/**
+ * A command in the test language whose arguments are plain source strings.
+ */
+class CommandToken extends QueryToken {
+  readonly arguments: readonly string[];
+  constructor(private readonly name: string, args: readonly string[] = [], start = 0) {
+    super(`${name} ${args.join(' ')}`.trim(), start);
+    this.arguments = args;
+  }
+  isCallExpression(): boolean {
+    return true;
+  }
+  functionName(): string {
+    return this.name;
+  }
+  withName(name: string): CommandToken {
+    return new CommandToken(name, this.arguments, this.start);
+  }
+  withArguments(args: readonly string[]): CommandToken {
+    return new CommandToken(this.name, args, this.start);
+  }
+  clone(): CommandToken {
+    return new CommandToken(this.name, [...this.arguments], this.start);
   }
 }
 
@@ -74,7 +122,21 @@ describe('EvaluatedExpression', () => {
     expect(expression.stringify()).toBe(`$:${token.source}`);
   });
 
-  it('exposes call operations only for prefixed JavaScript calls', () => {
+  it('uses the language token for function classification and call edits', () => {
+    const token = new CommandToken('select', ['name', 'users'], 2);
+    const expression = FunctionExpression.parse([new PrefixToken(), token]);
+    expect(parseExpression(expression.tokens)).toBeInstanceOf(FunctionExpression);
+    expect(expression.isValid()).toBe(true);
+    expect(expression.functionName()).toBe('select');
+    expect(expression.arguments.map((argument) => expression.code.sourceOf(argument))).toEqual(['name', 'users']);
+    const edited = expression.withName('fetch').withArgumentSources(['id', 'accounts']);
+    expect(edited.stringify()).toBe('$:fetch id accounts');
+    expect(edited.code).toBeInstanceOf(CommandToken);
+    expect(edited.clone().code).not.toBe(edited.code);
+    expect(expression.stringify()).toBe('$:select name users');
+  });
+
+  it('exposes call operations only for prefixed calls', () => {
     for (const source of ['$:true', "$:{thing:'other'}", '$:user.name', '$:ready ? greet() : null']) {
       const expression = parseExpression(source);
       expect(expression.constructor).toBe(EvaluatedExpression);
