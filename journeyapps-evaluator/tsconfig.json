@@ -8,7 +8,5 @@
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
   "include": ["./src/**/*.ts"],
-  "references": [
-    { "path": "../journeyapps-core-xml" }
-  ]
+  "references": [{ "path": "../journeyapps-core-xml" }]
 }

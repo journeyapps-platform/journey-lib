@@ -1,6 +1,6 @@
 // # schema module
 // Parser for v2 and v3 of the schema XML.
-import { FormatString, FunctionTokenExpression } from '@journeyapps/evaluator';
+import { FormatStringExpression, FUNCTION_PREFIX } from '@journeyapps/evaluator';
 import * as xml from '@journeyapps/core-xml';
 import { FunctionType } from '../types/FunctionType';
 import { Param } from '../types/Param';
@@ -131,7 +131,7 @@ const v3ParameterDef = {
     "media must be 'any', or one of the specific allowed mime types."
   ),
   required: xml.attribute.optionList(['true', 'false']),
-  'transform-value': xml.attribute.optionListWithFunctions([], FunctionTokenExpression.PREFIX),
+  'transform-value': xml.attribute.optionListWithFunctions([], FUNCTION_PREFIX),
   _required: ['name', 'type']
 };
 
@@ -416,7 +416,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         fmtString = displayElement.textContent;
         attribute = false;
       }
-      object.displayFormat = new FormatString({ expression: fmtString });
+      object.displayFormat = new FormatStringExpression({ expression: fmtString });
       if (options.recordSource) {
         object.displaySource = displayElement;
       }
@@ -438,7 +438,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       });
     } else if (displayElements.length === 0) {
       errorHandler.pushError(element, '<display> is required');
-      object.displayFormat = new FormatString({ expression: '' });
+      object.displayFormat = new FormatStringExpression({ expression: '' });
     } else {
       errorHandler.pushError(displayElements[1], 'Only one <display> element is allowed', 'warning');
     }
@@ -710,7 +710,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       parseElement(notificationElement, syntax, errorHandler);
 
       const notifyUserObject = {
-        message: new FormatString({ expression: getAttribute(notificationElement, 'message') }),
+        message: new FormatStringExpression({ expression: getAttribute(notificationElement, 'message') }),
         recipient: getAttribute(notificationElement, 'recipient-field'),
         received: getAttribute(notificationElement, 'received-field'),
         badgeCount: getAttribute(notificationElement, 'badge-count-field')
@@ -1143,7 +1143,7 @@ export function jsonParser(schema: Schema) {
       const object = schema.newObjectType();
       object.name = name;
       object.label = objectData.label;
-      object.displayFormat = new FormatString({ expression: objectData.display });
+      object.displayFormat = new FormatStringExpression({ expression: objectData.display });
 
       Object.keys(objectData.attributes).forEach(function (attributeName) {
         const attributeData = objectData.attributes[attributeName];

@@ -1,263 +1,156 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  ArrayTokenExpression,
-  ConstantTokenExpression,
-  FormatShorthandTokenExpression,
-  FunctionExpressionContext,
-  FunctionTokenExpression,
-  PrimitiveConstantTokenExpression,
-  ShorthandTokenExpression,
-  TokenExpressionParser
+  parseExpression,
+  CombinedParser,
+  FunctionExpressionParser,
+  ShorthandExpressionParser,
+  EvaluatedExpressionParser,
+  FormatStringExpressionParser,
+  PlaceholderToken,
+  ConstantExpression,
+  FunctionExpression,
+  ShorthandExpression,
+  TextExpression,
+  PrimitiveConstantExpression,
+  NullExpression,
+  EvaluatedExpression,
+  FormatShorthandExpression,
+  JSToken,
+  PrefixToken
 } from '../src';
-import { FormatStringContext } from '../src/context/FormatStringContext';
 
-declare module 'vitest' {
-  export interface TestContext {
-    parser: TokenExpressionParser;
-  }
-}
-
-describe('Expression Parsing ', () => {
-  beforeEach((context) => {
-    context.parser = new TokenExpressionParser();
+describe('Expression parser composition', () => {
+  it.each([
+    ['false', false, PrimitiveConstantExpression],
+    ['1e3', 1000, PrimitiveConstantExpression],
+    ["'it\\'s fine'", "it's fine", TextExpression],
+    ['"Hello"', 'Hello', TextExpression],
+    ['null', null, NullExpression]
+  ])('preserves the syntax and typed value of %s', (source, value, Type) => {
+    const expression = parseExpression(String(source)) as ConstantExpression;
+    expect(expression).toBeInstanceOf(Type);
+    expect(expression.value()).toBe(value);
+    expect(expression.stringify()).toBe(source);
   });
 
-  it('should parse PrimitiveConstantTokenExpression', ({ parser }) => {
-    let result = parser.parse({ source: '3' });
-    expect(result).toBeInstanceOf(PrimitiveConstantTokenExpression);
-    expect(result.expression).toEqual(3);
+  it.each(['user.name', 'user[field]', "user['name'].length", 'shared.func().something', 'user?.name'])(
+    'keeps reference structure in Babel: %s',
+    (source) => {
+      const expression = parseExpression(source) as ShorthandExpression;
+      expect(expression).toBeInstanceOf(ShorthandExpression);
+      expect(expression.tokens).toHaveLength(1);
+      expect(expression.js.ast.type).toMatch(/MemberExpression/);
+      expect(expression.stringify()).toBe(source);
+    }
+  );
 
-    result = parser.parse({ source: 'true' });
-    expect(result).toBeInstanceOf(PrimitiveConstantTokenExpression);
-    expect(result.expression).toEqual(true);
+  it.each(['$:foo()', '$:myVar', '$:journey.version', "$:user['name'].length"])(
+    'recognizes prefixed expressions without changing source: %s',
+    (source) => {
+      const expression = parseExpression(source);
+      expect(expression).toBeInstanceOf(EvaluatedExpression);
+      expect(expression.constructor).toBe(source === '$:foo()' ? FunctionExpression : EvaluatedExpression);
+      expect(expression.stringify()).toBe(source);
+    }
+  );
+
+  it('retains nested calls, arrays and objects in one Babel tree', () => {
+    const source = ' $:save("Hello", [true, user.name], {value: find(null)}) /* end */ ';
+    const expression = FunctionExpression.parse(source);
+    expect(expression.functionName()).toBe('save');
+    expect(expression.arguments.map((argument) => argument.type)).toEqual([
+      'StringLiteral',
+      'ArrayExpression',
+      'ObjectExpression'
+    ]);
+    const object = expression.arguments[2];
+    expect(object.type).toBe('ObjectExpression');
+    if (object.type === 'ObjectExpression' && object.properties[0].type === 'ObjectProperty') {
+      expect(object.properties[0].value.type).toBe('CallExpression');
+    }
+    expect(expression.tokens.filter((token) => token instanceof JSToken)).toHaveLength(1);
+    expect(expression.stringify()).toBe(source);
   });
 
-  it('should parse ConstantTokenExpression', ({ parser }) => {
-    let result = parser.parse({ source: '"foo"' });
-    expect(result).toBeInstanceOf(ConstantTokenExpression);
-    expect(result.expression).toEqual('foo');
-
-    result = parser.parse({ source: '{{cool}}' });
-    expect(result).toBeInstanceOf(ConstantTokenExpression);
-    expect(result.expression).toEqual('{cool}');
+  it('preserves operators, parentheses and conditional branch types', () => {
+    const source = '$: (ready || enabled) ? "Yes" : null';
+    const expression = parseExpression(source) as EvaluatedExpression;
+    expect(expression.constructor).toBe(EvaluatedExpression);
+    const node = (expression.codeToken as JSToken).ast;
+    expect(node.type).toBe('ConditionalExpression');
+    if (node.type === 'ConditionalExpression') {
+      expect([node.test.type, node.consequent.type, node.alternate.type]).toEqual([
+        'LogicalExpression',
+        'StringLiteral',
+        'NullLiteral'
+      ]);
+    }
+    expect(expression.stringify()).toBe(source);
+    expect(expression.text()).toBe('(ready || enabled) ? "Yes" : null');
   });
 
-  it('should parse ShorthandTokenExpression', ({ parser }) => {
-    let result = parser.parse<ShorthandTokenExpression>({ source: 'foo' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('foo');
-
-    result = parser.parse<ShorthandTokenExpression>({ source: 'user.name' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('user.name');
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'name' })]);
-
-    result = parser.parse({ source: '{user.name}' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('user.name');
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'name' })]);
-
-    result = parser.parse({ source: 'user.name.first' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('user.name.first');
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([
-      new ShorthandTokenExpression({ expression: 'name' }),
-      new ShorthandTokenExpression({ expression: 'first' })
-    ]);
-
-    result = parser.parse<ShorthandTokenExpression>({ source: 'user[field]' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('user[field]');
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([
-      new ShorthandTokenExpression({ expression: 'field', isComputed: true })
-    ]);
-
-    result = parser.parse<ShorthandTokenExpression>({ source: 'user.roles[field]' });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual('user.roles[field]');
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([
-      new ShorthandTokenExpression({ expression: 'roles' }),
-      new ShorthandTokenExpression({ expression: 'field', isComputed: true })
-    ]);
-
-    result = parser.parse<ShorthandTokenExpression>({ source: "user['name'].length" });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual("user['name'].length");
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([
-      new ConstantTokenExpression({ expression: 'name', isComputed: true }),
-      new ShorthandTokenExpression({ expression: 'length' })
-    ]);
-
-    result = parser.parse<ShorthandTokenExpression>({ source: "user['roles']['admin']" });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual("user['roles']['admin']");
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([
-      new ConstantTokenExpression({ expression: 'roles', isComputed: true }),
-      new ConstantTokenExpression({ expression: 'admin', isComputed: true })
-    ]);
-
-    result = parser.parse<ShorthandTokenExpression>({ source: "user.files['image'].filename.length" });
-    expect(result).toBeInstanceOf(ShorthandTokenExpression);
-    expect(result.expression).toEqual("user.files['image'].filename.length");
+  it.each(['value:05', 'value:.2f', 'product.price:.2f'])('recognizes format specifiers: %s', (source) => {
+    const expression = parseExpression(source);
+    expect(expression).toBeInstanceOf(FormatShorthandExpression);
+    expect(expression.stringify()).toBe(source);
+    expect(expression.format).toBe(source.includes('05') ? '05' : '.2f');
   });
 
-  it('should parse FunctionTokenExpression', ({ parser }) => {
-    let result: any = parser.parse({ source: 'foo()' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('foo()');
-
-    result = parser.parse({ source: '$:foo()' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('foo()');
-
-    result = parser.parse({ source: '{$:foo()}' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('foo()');
-
-    result = parser.parse({ source: '$:myVar.foo()' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('myVar.foo()');
-
-    result = parser.parse({ source: '$:myVar' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('myVar');
-
-    result = parser.parse({ source: '{$:myVar}' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('myVar');
-
-    result = parser.parse<FunctionTokenExpression>({ source: '$:journey.version' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('journey.version');
-    expect(result.isFunction()).toEqual(true);
-    expect(result.stringify()).toEqual('journey.version');
-    expect(result.options.name).toEqual('journey');
-    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'version' })]);
-
-    result = parser.parse<FunctionTokenExpression>({ source: "$:user['name'].length" });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual("user['name'].length");
-    expect(result.isFunction()).toEqual(true);
-    expect(result.stringify()).toEqual("user['name'].length");
-    expect(result.options.name).toEqual('user');
-    expect(result.options.properties).toEqual([
-      new ConstantTokenExpression({ expression: 'name', isComputed: true }),
-      new ShorthandTokenExpression({ expression: 'length' })
-    ]);
-
-    result = parser.parse({ source: '$:null' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('null');
-
-    result = parser.parse({ source: '$:true' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('true');
-
-    result = parser.parse({ source: '$:(showIf() || false)' });
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.expression).toEqual('showIf() || false');
-    expect(result.stringify()).toEqual('(function(left, right) { return left || right; })(showIf(), false)');
+  it('supports existing tree tokens without changing their identity', () => {
+    const tokens = [new PrefixToken(20), new JSToken('save(true)', 22)];
+    const expression = new FunctionExpressionParser().tryParse(tokens);
+    expect(expression.tokens).toEqual(tokens);
+    expect(expression.js).toBe(tokens[1]);
+    expect(parseExpression(tokens)).toBeInstanceOf(FunctionExpression);
+    expect(() => FunctionExpression.parse('true')).toThrow(SyntaxError);
+    expect(() => FunctionExpression.parse('')).toThrow(SyntaxError);
   });
 
-  it('should parse FunctionTokenExpression with arguments', ({ parser }) => {
-    let result = parser.parse<FunctionTokenExpression>({ source: 'foo("bar", 3, true)' });
-    expect(result.functionName()).toEqual('foo');
-    const args = result.arguments;
-    expect(args).toEqual([
-      new ConstantTokenExpression({ expression: 'bar' }),
-      new PrimitiveConstantTokenExpression({ expression: 3 }),
-      new PrimitiveConstantTokenExpression({ expression: true })
+  it('uses caller-defined order and stops after the first matching parser', () => {
+    const visited: string[] = [];
+    const parser = new CombinedParser([
+      {
+        tryParse: () => {
+          visited.push('first');
+          return null;
+        }
+      },
+      {
+        tryParse: (source) => {
+          visited.push('second');
+          return TextExpression.parse(source);
+        }
+      },
+      {
+        tryParse: () => {
+          throw new Error('Must not be visited');
+        }
+      }
     ]);
-
-    result = parser.parse<FunctionTokenExpression>({ source: '(function (input){ return input + "bar" })("foo")' });
-    expect(result.functionName()).toEqual('function (input){ return input + "bar" }');
-    expect(result.arguments).toEqual([new ConstantTokenExpression({ expression: 'foo' })]);
-
-    result = parser.parse<FunctionTokenExpression>({ source: 'foo(user.name.first)' });
-    expect(result.functionName()).toEqual('foo');
-    expect(result.arguments).toEqual([
-      new ShorthandTokenExpression({
-        expression: 'user.name.first',
-        name: 'user',
-        properties: [
-          new ShorthandTokenExpression({ expression: 'name' }),
-          new ShorthandTokenExpression({ expression: 'first' })
-        ]
-      })
-    ]);
-
-    result = parser.parse<FunctionTokenExpression>({ source: 'foo([true, "bar", user.name])' });
-    expect(result.functionName()).toEqual('foo');
-    const arrayTokenExpression = result.arguments[0];
-    expect(arrayTokenExpression).toEqual(
-      new ArrayTokenExpression({
-        expression: '[true, "bar", user.name]',
-        elements: [
-          new PrimitiveConstantTokenExpression({ expression: true }),
-          new ConstantTokenExpression({ expression: 'bar' }),
-          new ShorthandTokenExpression({
-            expression: 'user.name',
-            name: 'user',
-            properties: [new ShorthandTokenExpression({ expression: 'name' })]
-          })
-        ]
-      })
-    );
-    expect(arrayTokenExpression.stringify()).toEqual('[true, "bar", user.name]');
+    expect(parser.tryParse('hello').stringify()).toBe('hello');
+    expect(visited).toEqual(['first', 'second']);
+    expect(new CombinedParser([]).tryParse('hello')).toBeNull();
   });
 
-  it('should parse in-line expression to FunctionTokenExpression', ({ parser }) => {
-    let result = parser.parse<FunctionTokenExpression>({ source: '$: user ? "Yes" : "No"' });
-    expect(result.expression).toEqual('user ? "Yes" : "No"');
-    expect(result.arguments).toEqual([
-      new ShorthandTokenExpression({ expression: 'user' }),
-      new ConstantTokenExpression({ expression: 'Yes' }),
-      new ConstantTokenExpression({ expression: 'No' })
-    ]);
-    expect(result.stringify()).toEqual(`user ? 'Yes' : 'No'`);
+  it('distinguishes an unrecognized syntax from malformed recognized input', () => {
+    const parser = new CombinedParser([new FunctionExpressionParser(), new ShorthandExpressionParser()]);
+    expect(parser.tryParse('42')).toBeNull();
+    expect(new FunctionExpressionParser().tryParse('worker')).toBeNull();
+    expect(parser.tryParse('worker')).toBeInstanceOf(ShorthandExpression);
+    expect(() => parser.tryParse('$:broken(')).toThrow(SyntaxError);
+    expect(new CombinedParser([new EvaluatedExpressionParser()]).tryParse('')).toBeNull();
+    expect(parseExpression('broken(')).toBeNull();
+    expect(() => parseExpression('$:broken(')).toThrow(SyntaxError);
   });
-
-  it('should parse format specifiers', ({ parser }) => {
-    let result = parser.parse({ source: 'value:05', context: new FormatStringContext() });
-    expect(result).toBeInstanceOf(FormatShorthandTokenExpression);
-    expect(result.expression).toEqual('value');
-    expect(result.format).toEqual('05');
-
-    result = parser.parse({ source: '{value:.2f}', context: new FormatStringContext() });
-    expect(result).toBeInstanceOf(FormatShorthandTokenExpression);
-    expect(result.expression).toEqual('value');
-    expect(result.format).toEqual('.2f');
-
-    result = parser.parse({ source: '{product.price:.2f}', context: new FormatStringContext() });
-    expect(result).toBeInstanceOf(FormatShorthandTokenExpression);
-    expect(result.expression).toEqual('product.price');
-    expect(result.format).toEqual('.2f');
-  });
-
-  it('should parse member expressions', ({ parser }) => {
-    let result = parser.parse({ source: '$:foo.bar.bas' }) as FunctionTokenExpression;
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.options.name).toEqual('foo');
-    expect(result.options.properties).toEqual([
-      new ShorthandTokenExpression({ expression: 'bar' }),
-      new ShorthandTokenExpression({ expression: 'bas' })
-    ]);
-
-    result = parser.parse({ source: '$:shared.func().something' }) as FunctionTokenExpression;
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.options.name).toEqual('shared.func()');
-    expect(result.options.properties).toEqual([new ShorthandTokenExpression({ expression: 'something' })]);
-
-    result = parser.parse({ source: '$:shared.something.func()' }) as FunctionTokenExpression;
-    expect(result).toBeInstanceOf(FunctionTokenExpression);
-    expect(result.options.name).toEqual('shared.something.func');
-    expect(result.options.properties).toEqual(undefined);
+  it('preserves offsets through composed and format-string parsers', () => {
+    const functionParser = new CombinedParser([new FunctionExpressionParser()]);
+    const functionExpression = functionParser.tryParse('$:save(true)', 20) as FunctionExpression;
+    expect(functionExpression.tokens.map((token) => token.start)).toEqual([20, 22]);
+    const format = new FormatStringExpressionParser().tryParse('Hello {$:save(true)}', 100);
+    expect(format.tokens.map((token) => token.start)).toEqual([100, 106]);
+    const placeholder = format.tokens[1] as PlaceholderToken;
+    expect(placeholder.expression).toBeInstanceOf(FunctionExpression);
+    expect(placeholder.children.map((token) => token.start)).toEqual([107, 109]);
+    expect(format.stringify()).toBe('Hello {$:save(true)}');
   });
 });

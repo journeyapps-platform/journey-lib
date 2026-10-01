@@ -4,7 +4,7 @@ import { DatabaseObject } from '../database/DatabaseObject';
 import { Batch } from '../database/Batch';
 import { ObjectData } from '../types/ObjectData';
 import { GenericObject } from '../types/GenericObject';
-import { FormatString } from '@journeyapps/evaluator';
+import { FormatStringExpression } from '@journeyapps/evaluator';
 import * as j from '../utils/JourneyPromise';
 import { ObjectType } from '../types/ObjectType';
 
@@ -172,9 +172,9 @@ export class Query<T extends DatabaseObject = DatabaseObject> {
   }
 
   // This version pre-loads relationships in the display format. It is purely an optimization.
-  // If columns (Array of FormatString) is specified, it is used to determine
+  // If columns (Array of FormatStringExpression) is specified, it is used to determine
   // the relationship structure. Otherwise, the displayFormat is used.
-  _fetchWithDisplay(columns?: FormatString[] | Record<string, FormatString>) {
+  _fetchWithDisplay(columns?: FormatStringExpression[] | Record<string, FormatStringExpression>) {
     const relationships = getPreloadRelationships(this.type, columns);
     return this._includeInternal(relationships)._fetch();
   }
@@ -458,7 +458,10 @@ function deepMerge(a: RelationshipHash, b: RelationshipHash): RelationshipHash {
   return a;
 }
 
-function getPreloadRelationships(type: ObjectType, columns?: FormatString[] | Record<string, FormatString>) {
+function getPreloadRelationships(
+  type: ObjectType,
+  columns?: FormatStringExpression[] | Record<string, FormatStringExpression>
+) {
   // Not the most efficient function, but should be little overhead
   // compared to querying the database.
   let relationships: RelationshipHash = {};

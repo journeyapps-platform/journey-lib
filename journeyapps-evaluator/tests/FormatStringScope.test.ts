@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { FormatString, VariableFormatStringScope, VariableScope } from '../src';
+import { FormatStringExpression, VariableFormatStringScope, VariableScope } from '../src';
 import { MockType } from './mocks/MockType';
 import { MockVariableScope } from './mocks/MockVariableScope';
 import { MockVariableType } from './mocks/MockVariableType';
@@ -11,11 +11,11 @@ declare module 'vitest' {
 }
 
 function evaluate(expression: string, scope: VariableScope) {
-  return new FormatString({ expression }).evaluate(new VariableFormatStringScope(scope));
+  return new FormatStringExpression({ expression }).evaluate(new VariableFormatStringScope(scope));
 }
 
 function evaluatePromise(expression: string, scope: VariableScope) {
-  return new FormatString({ expression }).evaluatePromise(new VariableFormatStringScope(scope));
+  return new FormatStringExpression({ expression }).evaluatePromise(new VariableFormatStringScope(scope));
 }
 
 describe('Evaluate', () => {
@@ -72,7 +72,7 @@ describe('Evaluate', () => {
     expect(evaluate('{undefined_variable}', scope)).toBe('');
   });
 
-  it('should handle view variables via tokenEvaluatePromise', ({ scope }) => {
+  it('should handle view variables via evaluatePromise', ({ scope }) => {
     expect(evaluatePromise('{name}', scope)).resolves.toEqual('Test');
     expect(evaluatePromise('{person.name}', scope)).resolves.toEqual('Peter');
     expect(evaluatePromise('{person.surname}', scope)).resolves.toEqual('');
@@ -84,7 +84,7 @@ describe('Evaluate', () => {
     expect(evaluate('{ghost.name}', scope)).toBe('');
   });
 
-  it('should handle undefined variables via tokenEvaluatePromise', ({ scope }) => {
+  it('should handle undefined variables via evaluatePromise', ({ scope }) => {
     expect(evaluatePromise('{ghost}', scope)).resolves.toEqual('');
     expect(evaluatePromise('{ghost.name}', scope)).resolves.toEqual('');
   });
@@ -93,7 +93,7 @@ describe('Evaluate', () => {
     expect(evaluate('{person}', scope)).toBe('Custom String');
   });
 
-  it('should handle object display names via tokenEvaluatePromise', ({ scope }) => {
+  it('should handle object display names via evaluatePromise', ({ scope }) => {
     expect(evaluatePromise('{person}', scope)).resolves.toEqual('Custom String');
   });
 
@@ -103,12 +103,14 @@ describe('Evaluate', () => {
   });
 
   it('should handle TemplateLiterals', ({ scope }) => {
-    expect(evaluate('{`TEMPLATE`}', scope)).toBe('{$:`TEMPLATE`}');
-    expect(evaluate("{`TEMPLATE ${'true'}`}", scope)).toBe("{$:`TEMPLATE ${'true'}`}");
-    expect(evaluate('{`TEMPLATE ${view.users.length ?? 0}`}', scope)).toBe('{$:`TEMPLATE ${view.users.length ?? 0}`}');
+    expect(evaluate('{$:`TEMPLATE`}', scope)).toBe('{$:`TEMPLATE`}');
+    expect(evaluate("{$:`TEMPLATE ${'true'}`}", scope)).toBe("{$:`TEMPLATE ${'true'}`}");
+    expect(evaluate('{$:`TEMPLATE ${view.users.length ?? 0}`}', scope)).toBe(
+      '{$:`TEMPLATE ${view.users.length ?? 0}`}'
+    );
   });
 
-  it('should handle mixed text via tokenEvaluatePromise', ({ scope }) => {
+  it('should handle mixed text via evaluatePromise', ({ scope }) => {
     expect(evaluatePromise('Asset {serial}', scope)).resolves.toEqual('Asset 12345');
     expect(evaluatePromise('{{some text}} more {serial}', scope)).resolves.toEqual('{some text} more 12345');
   });
@@ -120,7 +122,7 @@ describe('Evaluate', () => {
     expect(evaluate('{pi:.0f}', scope)).toBe('3');
   });
 
-  it('should handle format specifiers for decimal numbers via tokenEvaluatePromise', ({ scope }) => {
+  it('should handle format specifiers for decimal numbers via evaluatePromise', ({ scope }) => {
     expect(evaluatePromise('{pi}', scope)).resolves.toEqual('3.14159265359');
     expect(evaluatePromise('{one}', scope)).resolves.toEqual('1.1');
     expect(evaluatePromise('{pi:.3f}', scope)).resolves.toEqual('3.142');
@@ -133,7 +135,7 @@ describe('Evaluate', () => {
     expect(evaluate('', scope)).toBe('');
   });
 
-  it('should handle null & undefined via tokenEvaluatePromise', ({ scope }) => {
+  it('should handle null & undefined via evaluatePromise', ({ scope }) => {
     expect(evaluatePromise(null, scope)).resolves.toEqual('');
     expect(evaluatePromise(undefined, scope)).resolves.toEqual('');
     expect(evaluatePromise('', scope)).resolves.toEqual('');

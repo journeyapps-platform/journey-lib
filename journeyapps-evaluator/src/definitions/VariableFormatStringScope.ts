@@ -28,7 +28,7 @@ export class VariableFormatStringScope implements FormatStringScope {
     return VariableFormatStringScope.getValuePromise(this.variableScope, expression);
   }
 
-  evaluateFunctionExpression(expression: string): Promise<any> {
+  evaluateFunctionExpression(_expression: string): Promise<any> {
     throw new Error('Not supported');
   }
 

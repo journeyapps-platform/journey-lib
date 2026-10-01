@@ -1,75 +1,40 @@
+import { CombinedParser } from './CombinedParser';
+import { parseExpression } from './utils/parserUtils';
 import { TypeInterface } from './definitions/TypeInterface';
-import { FormatString } from './FormatString';
-import {
-  FormatShorthandTokenExpression,
-  FunctionTokenExpression,
-  LegacyFunctionTokenExpression,
-  ShorthandTokenExpression
-} from './token-expressions';
+import { FormatStringExpression } from './expressions/text/FormatStringExpression';
+import { FunctionExpressionParser, EvaluatedExpressionParser, AbstractExpression } from './expressions';
+
+export { formatValue } from './utils/formatStringUtils';
 
 /**
  * Create format string.
  */
-export function formatString(expression: string): FormatString | null {
+export function formatString(expression: string): FormatStringExpression | null {
   if (expression == null) {
     return null;
   } else {
-    return new FormatString({ expression });
+    return new FormatStringExpression({ expression });
   }
 }
 
 /**
- # Construct a function token expression from a raw expression string.
+ * Construct an explicitly evaluated expression, including function calls.
  */
-export function functionTokenExpression(expression: string, allowLegacy: boolean = true) {
+export function functionExpression(expression: string): AbstractExpression | null {
   if (expression == null) {
     return null;
   }
-  if (expression.trim().indexOf(FunctionTokenExpression.PREFIX) === 0) {
-    return FunctionTokenExpression.parse(expression);
-  }
-  if (allowLegacy) {
-    // assume legacy function token expression (if allowed) at this point
-    return new LegacyFunctionTokenExpression({ expression });
-  }
-  return null;
+  return new CombinedParser([new FunctionExpressionParser(), new EvaluatedExpressionParser()]).tryParse(expression);
 }
 
 /**
- * Create a token expression that can be evaluated.
+ * Create a expression that can be evaluated.
  */
-export function actionableTokenExpression(
-  expression: string
-): FunctionTokenExpression | ShorthandTokenExpression | FormatShorthandTokenExpression {
+export function actionableExpression(expression: string): AbstractExpression | null {
   if (expression == null) {
     return null;
   }
-  if (expression.trim().indexOf(FunctionTokenExpression.PREFIX) === 0) {
-    return FunctionTokenExpression.parse(expression);
-  }
-  const colon = expression.indexOf(':');
-  if (colon === -1) {
-    return new ShorthandTokenExpression({ expression });
-  }
-  return new FormatShorthandTokenExpression({
-    expression: expression.substring(0, colon),
-    format: expression.substring(colon + 1)
-  });
-}
-
-/**
- * Format an expression with a specific format.
- */
-export function formatValue(value: any, type: TypeInterface, format: string): string {
-  if (value == null) {
-    return '';
-  } else if (type != null) {
-    return type.format(value, format);
-  } else {
-    // This should generally not happen. However, we still try to handle it gracefully.
-    // This is useful for tests where we don't want to define the type for every variable.
-    return value.toString();
-  }
+  return parseExpression(expression);
 }
 
 export function extract(type: TypeInterface, expression: string, into: any, depth: number) {

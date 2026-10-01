@@ -1,5 +1,5 @@
 import { Type } from './Type';
-import { FormatString } from '@journeyapps/evaluator';
+import { FormatStringExpression } from '@journeyapps/evaluator';
 import { Variable } from './Variable';
 import { Relationship } from './Relationship';
 import { Schema } from '../schema/Schema';
@@ -9,7 +9,7 @@ import { PrimitiveType, TextType } from './primitives';
 import { AbstractObjectTypeFactory, GenerateTypeEvent } from '../schema/TypeFactory';
 
 export interface NotificationConfig {
-  message: FormatString;
+  message: FormatStringExpression;
   recipient: string;
   received: string;
   badgeCount: string;
@@ -22,7 +22,7 @@ export class ObjectType extends Type {
     return type.name == ObjectType.TYPE;
   }
 
-  displayFormat: FormatString | null;
+  displayFormat: FormatStringExpression | null;
   displaySource?: XMLElement;
   label: string;
 
