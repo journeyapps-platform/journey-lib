@@ -1,4 +1,4 @@
-import { MultipleChoiceType as SchemaMultipleChoiceType } from '@journeyapps/parser-schema';
+import { MultipleChoiceType as SchemaMultipleChoiceType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 
 type GConstructor<T extends SchemaMultipleChoiceType = SchemaMultipleChoiceType> = new (...args: any[]) => T;

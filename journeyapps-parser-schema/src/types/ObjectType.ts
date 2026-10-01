@@ -1,5 +1,5 @@
 import { Type } from './Type';
-import { FormatStringExpression } from '@journeyapps/evaluator';
+import { FormatStringExpression } from '@ja-platform/evaluator';
 import { Variable } from './Variable';
 import { Relationship } from './Relationship';
 import { Schema } from '../schema/Schema';

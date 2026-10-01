@@ -1,4 +1,4 @@
-import { ValueSerializeOptions } from '@journeyapps/parser-schema';
+import { ValueSerializeOptions } from '@ja-platform/parser-schema';
 import { Query } from '../../query/Query';
 import { ObjectData } from '../../types/ObjectData';
 import { ExecuteBatchOperation, ExecuteBatchResult } from '../Batch';

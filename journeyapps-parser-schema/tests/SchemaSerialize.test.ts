@@ -1,6 +1,6 @@
-import { prettyText, parse } from '@journeyapps/core-xml';
-import { FormatStringExpression } from '@journeyapps/evaluator';
-import { Version } from '@journeyapps/parser-common';
+import { prettyText, parse } from '@ja-platform/core-xml';
+import { FormatStringExpression } from '@ja-platform/evaluator';
+import { Version } from '@ja-platform/parser-common';
 import { describe, it, expect } from 'vitest';
 import { Schema, toDOM } from '../src';
 

@@ -1,7 +1,7 @@
 import { Schema } from './Schema';
-import { setAttributes, OrderedIncrementalUpdater } from '@journeyapps/core-xml';
+import { setAttributes, OrderedIncrementalUpdater } from '@ja-platform/core-xml';
 import { XMLElement, XMLDocument } from '@journeyapps/domparser/types';
-import * as xml from '@journeyapps/core-xml';
+import * as xml from '@ja-platform/core-xml';
 import { Variable } from '../types/Variable';
 
 export function toDOM(schema: Schema): XMLDocument {

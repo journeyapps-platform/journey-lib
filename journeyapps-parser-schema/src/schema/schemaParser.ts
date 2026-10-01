@@ -1,7 +1,7 @@
 // # schema module
 // Parser for v2 and v3 of the schema XML.
-import { FormatStringExpression, FUNCTION_PREFIX } from '@journeyapps/evaluator';
-import * as xml from '@journeyapps/core-xml';
+import { FormatStringExpression, FUNCTION_PREFIX } from '@ja-platform/evaluator';
+import * as xml from '@ja-platform/core-xml';
 import { FunctionType } from '../types/FunctionType';
 import { Param } from '../types/Param';
 import { Schema } from './Schema';
@@ -9,7 +9,7 @@ import { ObjectType } from '../types/ObjectType';
 import { Type } from '../types/Type';
 import { ChoiceType, PrimitiveType } from '../types/primitives';
 import { Variable } from '../types/Variable';
-import { ParseErrors } from '@journeyapps/parser-common';
+import { ParseErrors } from '@ja-platform/parser-common';
 import { XMLDocument, XMLElement } from '@journeyapps/domparser/types';
 import { validateFieldName, validateModelName } from './reservedNames';
 import { IndexDatabase, IndexDirection, ModelIndex, ModelIndexKey } from './ModelIndex';

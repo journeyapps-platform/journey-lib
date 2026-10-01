@@ -1,4 +1,4 @@
-import { EnumOption } from '@journeyapps/parser-schema';
+import { EnumOption } from '@ja-platform/parser-schema';
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Collection, DatabaseObject, WebSQLAdapter, DBSchema as Schema, Attachment } from '../src';

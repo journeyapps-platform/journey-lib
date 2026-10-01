@@ -1,5 +1,5 @@
 // From: https://github.com/Microsoft/TypeScript/issues/2536
-import { ErrorType } from '@journeyapps/core-xml';
+import { ErrorType } from '@ja-platform/core-xml';
 
 export const RESERVED_WORDS = [
   'break',

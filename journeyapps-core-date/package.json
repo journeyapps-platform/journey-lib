@@ -1,5 +1,5 @@
 {
-  "name": "@journeyapps/core-date",
+  "name": "@ja-platform/core-date",
   "version": "5.3.2",
   "description": "Journey Date library",
   "main": "./dist/index.js",
@@ -16,5 +16,9 @@
   ],
   "devDependencies": {
     "moment": "^2.29.4"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

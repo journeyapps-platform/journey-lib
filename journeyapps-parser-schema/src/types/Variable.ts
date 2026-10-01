@@ -2,7 +2,7 @@ import { AbstractObjectTypeFactory, GenerateTypeEvent } from '../schema/TypeFact
 import { Type } from './Type';
 import { ObjectType } from './ObjectType';
 import { XMLElement } from '@journeyapps/domparser/types';
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 
 export interface VariableJsonType {
   name: string;

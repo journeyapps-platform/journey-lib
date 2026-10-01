@@ -1,4 +1,4 @@
-import { database, query, BaseAdapter, DatabaseObject, JourneyAPIAdapter, WebSQLAdapter } from '@journeyapps/db';
-import { Day } from '@journeyapps/core-date';
+import { database, query, BaseAdapter, DatabaseObject, JourneyAPIAdapter, WebSQLAdapter } from '@ja-platform/db';
+import { Day } from '@ja-platform/core-date';
 
 export { database, BaseAdapter, Day, DatabaseObject, JourneyAPIAdapter, query, WebSQLAdapter };

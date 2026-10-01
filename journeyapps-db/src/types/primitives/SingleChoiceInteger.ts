@@ -1,4 +1,4 @@
-import { EnumOption, SingleChoiceIntegerType as SchemaSingleChoiceIntegerType } from '@journeyapps/parser-schema';
+import { EnumOption, SingleChoiceIntegerType as SchemaSingleChoiceIntegerType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 
 export class SingleChoiceIntegerType extends DBTypeMixin(SchemaSingleChoiceIntegerType) {

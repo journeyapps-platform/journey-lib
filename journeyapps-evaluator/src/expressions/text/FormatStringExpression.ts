@@ -1,7 +1,7 @@
 import { placeholderEnd, formatValue } from '../../utils/formatStringUtils';
 import { ExpressionParser } from '../../ExpressionParser';
 import { parseExpression, requireExpression } from '../../utils/parserUtils';
-import { AttributeValidationError } from '@journeyapps/core-xml';
+import { AttributeValidationError } from '@ja-platform/core-xml';
 import { AbstractToken, JSToken, ExpressionSource, TextToken, PlaceholderToken, stringify } from '../../tokens';
 import { FormatStringScope } from '../../definitions/FormatStringScope';
 import { TypeInterface } from '../../definitions/TypeInterface';

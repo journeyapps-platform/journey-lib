@@ -1,1 +1,1 @@
-export { Day } from '@journeyapps/core-date';
+export { Day } from '@ja-platform/core-date';

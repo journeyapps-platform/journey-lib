@@ -1,4 +1,4 @@
-import { SingleChoiceType as SchemaSingleChoiceType } from '@journeyapps/parser-schema';
+import { SingleChoiceType as SchemaSingleChoiceType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 
 export class SingleChoiceType extends DBTypeMixin(SchemaSingleChoiceType) {

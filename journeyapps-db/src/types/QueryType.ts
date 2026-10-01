@@ -1,4 +1,4 @@
-import { QueryType as SchemaQueryType, QueryTypeFactory as SchemaQueryTypeFactory } from '@journeyapps/parser-schema';
+import { QueryType as SchemaQueryType, QueryTypeFactory as SchemaQueryTypeFactory } from '@ja-platform/parser-schema';
 import { Query } from '../query/Query';
 import { ObjectType } from './ObjectType';
 import { DBTypeMixin } from './Type';

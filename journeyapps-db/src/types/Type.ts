@@ -1,5 +1,5 @@
-import { TypeInterface } from '@journeyapps/evaluator';
-import { Type as SchemaType } from '@journeyapps/parser-schema';
+import { TypeInterface } from '@ja-platform/evaluator';
+import { Type as SchemaType } from '@ja-platform/parser-schema';
 
 export interface ValueSerializeOptions {
   inlineAttachments?: boolean;

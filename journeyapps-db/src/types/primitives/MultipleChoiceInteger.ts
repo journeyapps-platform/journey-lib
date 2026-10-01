@@ -1,4 +1,4 @@
-import { MultipleChoiceIntegerType as SchemaMultipleChoiceIntegerType } from '@journeyapps/parser-schema';
+import { MultipleChoiceIntegerType as SchemaMultipleChoiceIntegerType } from '@ja-platform/parser-schema';
 import { DBMultipleChoiceTypeMixin } from './MultipleChoice';
 import { DBTypeMixin } from '../Type';
 

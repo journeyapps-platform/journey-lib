@@ -1,4 +1,4 @@
-import { IntegerType as SchemaIntegerType } from '@journeyapps/parser-schema';
+import { IntegerType as SchemaIntegerType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 
 export class IntegerType extends DBTypeMixin(SchemaIntegerType) {

@@ -1,4 +1,4 @@
-import { Version, DEFAULT as DEFAULT_VERSION } from '@journeyapps/parser-common';
+import { Version, DEFAULT as DEFAULT_VERSION } from '@ja-platform/parser-common';
 import { FunctionType, FunctionTypeFactory } from '../types/FunctionType';
 import { Param, ParamFactory } from '../types/Param';
 import * as parser from './schemaParser';
@@ -8,9 +8,9 @@ import { ArrayType, ArrayTypeFactory } from '../types/collections/ArrayType';
 import { Relationship, RelationshipTypeFactory } from '../types/Relationship';
 import { ObjectType, ObjectTypeFactory } from '../types/ObjectType';
 import { Type } from '../types/Type';
-import { ValidationError } from '@journeyapps/core-xml';
+import { ValidationError } from '@ja-platform/core-xml';
 import { XMLError, XMLElement } from '@journeyapps/domparser/types';
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 import { PrimitiveTypeMap, PrimitiveTypeName } from '../types/primitives';
 import { PrimitiveTypeFactory, TypeFactory } from './TypeFactory';
 

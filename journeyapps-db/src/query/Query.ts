@@ -4,7 +4,7 @@ import { DatabaseObject } from '../database/DatabaseObject';
 import { Batch } from '../database/Batch';
 import { ObjectData } from '../types/ObjectData';
 import { GenericObject } from '../types/GenericObject';
-import { FormatStringExpression } from '@journeyapps/evaluator';
+import { FormatStringExpression } from '@ja-platform/evaluator';
 import * as j from '../utils/JourneyPromise';
 import { ObjectType } from '../types/ObjectType';
 

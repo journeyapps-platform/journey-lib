@@ -3,8 +3,8 @@
 // It contains the logic to filter a single object based on an expression.
 // It is up to the database adapters to perform optimised queries based on an index.
 
-import { Variable } from '@journeyapps/parser-schema';
-import { Day } from '@journeyapps/core-date';
+import { Variable } from '@ja-platform/parser-schema';
+import { Day } from '@ja-platform/core-date';
 
 import { ObjectData } from '../types/ObjectData';
 import { Type } from '../types/Type';

@@ -1,4 +1,4 @@
-import { PrimitiveType, PrimitiveTypeFactory, PrimitiveTypeName } from '@journeyapps/parser-schema';
+import { PrimitiveType, PrimitiveTypeFactory, PrimitiveTypeName } from '@ja-platform/parser-schema';
 import { AttachmentType } from './attachments/Attachment';
 import { BooleanType } from './Boolean';
 import { DateType } from './Date';

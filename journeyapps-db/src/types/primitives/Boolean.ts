@@ -1,4 +1,4 @@
-import { BooleanType as SchemaBooleanType } from '@journeyapps/parser-schema';
+import { BooleanType as SchemaBooleanType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 
 export class BooleanType extends DBTypeMixin(SchemaBooleanType) {

@@ -1,4 +1,4 @@
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 import { EnumOption } from '../EnumOption';
 import { Type } from '../Type';
 

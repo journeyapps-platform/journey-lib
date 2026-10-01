@@ -1,7 +1,7 @@
 import {
   ObjectType as SchemaObjectType,
   ObjectTypeFactory as SchemaObjectTypeFactory
-} from '@journeyapps/parser-schema';
+} from '@ja-platform/parser-schema';
 import { Query } from '../query/Query';
 import { DBTypeMixin } from './Type';
 

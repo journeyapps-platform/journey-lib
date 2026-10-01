@@ -1,4 +1,4 @@
-import { NumberType as SchemaNumberType } from '@journeyapps/parser-schema';
+import { NumberType as SchemaNumberType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 
 export class NumberType extends DBTypeMixin(SchemaNumberType) {

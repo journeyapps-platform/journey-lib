@@ -1,5 +1,5 @@
 {
-  "name": "@journeyapps/evaluator",
+  "name": "@ja-platform/evaluator",
   "version": "7.0.5",
   "description": "Journey Evaluator library",
   "main": "./dist/index.js",
@@ -18,10 +18,14 @@
   "dependencies": {
     "@babel/types": "^7.24.5",
     "@babel/parser": "^7.24.5",
-    "@journeyapps/core-xml": "workspace:*",
+    "@ja-platform/core-xml": "workspace:*",
     "@babel/traverse": "^7.28.5"
   },
   "devDependencies": {
     "@types/babel__traverse": "^7.20.5"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

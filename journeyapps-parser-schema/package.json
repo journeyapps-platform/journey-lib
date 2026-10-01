@@ -1,5 +1,5 @@
 {
-  "name": "@journeyapps/parser-schema",
+  "name": "@ja-platform/parser-schema",
   "version": "8.2.5",
   "description": "Journey Parser Schema library",
   "main": "./dist/index.js",
@@ -15,12 +15,16 @@
     "dist"
   ],
   "dependencies": {
-    "@journeyapps/core-xml": "workspace:*",
-    "@journeyapps/evaluator": "workspace:*",
-    "@journeyapps/parser-common": "workspace:*"
+    "@ja-platform/core-xml": "workspace:*",
+    "@ja-platform/evaluator": "workspace:*",
+    "@ja-platform/parser-common": "workspace:*"
   },
   "devDependencies": {
     "@journeyapps/domparser": "^0.4.1",
     "stream-browserify": "^3.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

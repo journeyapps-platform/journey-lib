@@ -1,4 +1,4 @@
-import { AttachmentType as SchemaAttachmentType } from '@journeyapps/parser-schema';
+import { AttachmentType as SchemaAttachmentType } from '@ja-platform/parser-schema';
 import { DBTypeMixin, ValueSerializeOptions } from '../../Type';
 import * as uuid from 'uuid';
 import { Attachment, toBackendData } from '../../Attachment';

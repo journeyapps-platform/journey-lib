@@ -1,4 +1,4 @@
-import { error, XMLPositional, ValidationError, ErrorType } from '@journeyapps/core-xml';
+import { error, XMLPositional, ValidationError, ErrorType } from '@ja-platform/core-xml';
 import { XMLError } from '@journeyapps/domparser/types';
 
 export class ParseErrors {
