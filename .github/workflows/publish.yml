@@ -1,79 +1,79 @@
-name: Build and Publish
+name: Changesets
+
 on:
   workflow_dispatch:
   push:
     branches:
-      - "**"
-    tags-ignore:
-      - "**"
+      - master
 
-env:
-  SECRETS: ${{ toJSON(secrets) }}
-  GITHUB_TOKEN: ${{ secrets.GH_SHARED_TOKEN_2 }}
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
 
 jobs:
-  build:
-    name: Publish
+  build-and-publish:
+    name: Build and Publish
     runs-on: ubuntu-latest
+    environment: npm
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{github.event.pull_request.head.sha}}
           fetch-depth: 0
-
-      - uses: actions/checkout@v4
-        with:
-          repository: journeyapps-platform/ci-actions
-          token: ${{ secrets.GH_SHARED_TOKEN_2 }}
-          path: .github/ci
-          ref: v1
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: https://registry.npmjs.org
 
       - name: Enable Corepack
         run: |
           npm install -g corepack@latest
           corepack enable pnpm
 
-      - name: Install Dependencies
-        uses: ./.github/ci/actions/npm-install
-        with:
-          client: pnpm
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - name: Has changesets
-        uses: actions/github-script@v6
-        id: changesetsCheck
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
         with:
-          script: |
-            const script = async ({ core, require }) => {
-            const getChangesets = require('@changesets/read').default;
-              try {
-                const results = await getChangesets(process.cwd());
-                core.setOutput('hasChangesets', results.length === 0 ? 'false' : 'true');
-              } catch (e) {
-                core.setFailed(`Action failed with error ${e}`);
-              }
-            };
-            await script({ core, require });
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Publish dev snapshot
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          pnpm changeset version --snapshot dev
+          pnpm changeset publish --tag dev
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
 
       - name: Create Release Pull Request or Publish to npm
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
         id: changesets
-        uses: changesets/action@v1.4.1
+        uses: changesets/action@v1
         with:
           version: pnpm ci:version
-          commit: "chore: update versions"
-          title: "[Chore] update versions"
+          publish: pnpm changeset publish
+          commit: 'chore: update versions'
+          title: '[Chore] update versions'
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_SHARED_TOKEN_2 }}
-
-      - name: Publish production packages.
-        if: ${{ github.ref == 'refs/heads/master' && steps.changesets.outputs.hasChangesets == 'false' && success() }}
-        run: |
-          pnpm ci:publish
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
