@@ -190,7 +190,16 @@ export class FormatStringExpression extends AbstractExpression<AbstractExpressio
     return result;
   }
 
-  private render(values: readonly unknown[]): string {
+  /**
+   * Assemble the text using resolved placeholder values in parameter order.
+   * This does not parse source or evaluate parameters.
+   *
+   * @example
+   * ```ts
+   * FormatStringExpression.parse('Hello {user.name}').render(['Sam']); // 'Hello Sam'
+   * ```
+   */
+  render(values: readonly unknown[]): string {
     let index = 0;
     return this.tokens
       .map((token) => {

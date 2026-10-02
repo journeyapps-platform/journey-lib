@@ -3,11 +3,11 @@ import { TypeInterface } from '../definitions/TypeInterface';
 /**
  * Format an expression with a specific format.
  */
-export function formatValue(value: any, type: TypeInterface, format: string): string {
+export function formatValue(value: any, type: TypeInterface | null, format?: string | null): string {
   if (value == null) {
     return '';
   } else if (type != null) {
-    return type.format(value, format);
+    return type.format(value, format ?? undefined);
   } else {
     // This should generally not happen. However, we still try to handle it gracefully.
     // This is useful for tests where we don't want to define the type for every variable.
@@ -18,7 +18,11 @@ export function formatValue(value: any, type: TypeInterface, format: string): st
 /**
  * Resolve an object's asynchronous display value before falling back to its type formatter.
  */
-export async function formatValueAsync(value: any, type: TypeInterface, format: string): Promise<string> {
+export async function formatValueAsync(
+  value: any,
+  type: TypeInterface | null,
+  format?: string | null
+): Promise<string> {
   let formatted: string;
   if (value != null && typeof value._display === 'function') {
     formatted = await value._display();
