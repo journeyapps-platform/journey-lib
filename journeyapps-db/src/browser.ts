@@ -2,8 +2,8 @@ import * as database from './database/Database';
 import * as query from './query/queryOperations';
 
 // Convenience export
-export { Day } from '@journeyapps/core-date';
-export { Variable } from '@journeyapps/parser-schema';
+export { Day } from '@ja-platform/core-date';
+export { Variable } from '@ja-platform/parser-schema';
 
 /**
  * @deprecated

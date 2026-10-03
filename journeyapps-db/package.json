@@ -1,5 +1,5 @@
 {
-  "name": "@journeyapps/db",
+  "name": "@ja-platform/db",
   "version": "8.1.1",
   "description": "Journey DB library",
   "main": "./dist/index.js",
@@ -19,11 +19,11 @@
     "websql": "^2.0.3"
   },
   "dependencies": {
-    "@journeyapps/core-date": "workspace:*",
-    "@journeyapps/core-xml": "workspace:*",
-    "@journeyapps/evaluator": "workspace:*",
-    "@journeyapps/parser-common": "workspace:*",
-    "@journeyapps/parser-schema": "workspace:*",
+    "@ja-platform/core-date": "workspace:*",
+    "@ja-platform/core-xml": "workspace:*",
+    "@ja-platform/evaluator": "workspace:*",
+    "@ja-platform/parser-common": "workspace:*",
+    "@ja-platform/parser-schema": "workspace:*",
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
@@ -32,5 +32,9 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
 }

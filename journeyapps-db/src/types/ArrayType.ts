@@ -1,5 +1,5 @@
 import { DBTypeMixin } from './Type';
-import { ArrayType as SchemaArrayType, ArrayTypeFactory as BaseTypeFactory } from '@journeyapps/parser-schema';
+import { ArrayType as SchemaArrayType, ArrayTypeFactory as BaseTypeFactory } from '@ja-platform/parser-schema';
 
 export class ArrayType extends DBTypeMixin(SchemaArrayType) {}
 

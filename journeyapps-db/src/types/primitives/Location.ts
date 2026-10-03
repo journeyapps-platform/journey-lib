@@ -1,4 +1,4 @@
-import { LocationType as SchemaLocationType } from '@journeyapps/parser-schema';
+import { LocationType as SchemaLocationType } from '@ja-platform/parser-schema';
 import { Location } from '../Location';
 import { DBTypeMixin } from '../Type';
 

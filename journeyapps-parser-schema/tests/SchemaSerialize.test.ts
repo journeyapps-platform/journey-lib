@@ -1,6 +1,6 @@
-import { prettyText, parse } from '@journeyapps/core-xml';
-import { FormatString } from '@journeyapps/evaluator';
-import { Version } from '@journeyapps/parser-common';
+import { prettyText, parse } from '@ja-platform/core-xml';
+import { FormatStringExpression } from '@ja-platform/evaluator';
+import { Version } from '@ja-platform/parser-common';
 import { describe, it, expect } from 'vitest';
 import { Schema, toDOM } from '../src';
 
@@ -38,7 +38,7 @@ describe('Schema toDOM', () => {
     schema.objects.worker.attributes.name.label = 'Full Name';
 
     // Change display
-    schema.objects.building.displayFormat = new FormatString({ expression: 'Updated' });
+    schema.objects.building.displayFormat = FormatStringExpression.parse('Updated');
 
     // Delete field
     delete schema.objects.room.attributes.name;

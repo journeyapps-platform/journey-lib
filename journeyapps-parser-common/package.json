@@ -1,5 +1,5 @@
 {
-  "name": "@journeyapps/parser-common",
+  "name": "@ja-platform/parser-common",
   "version": "8.0.7",
   "description": "Journey Parser library",
   "main": "./dist/index.js",
@@ -12,9 +12,9 @@
     "test:node": "vitest --run --config vitest.config.unit.ts"
   },
   "dependencies": {
-    "@journeyapps/core-xml": "workspace:*",
+    "@ja-platform/core-xml": "workspace:*",
     "@journeyapps/domparser": "^0.4.1",
-    "@journeyapps/evaluator": "workspace:*",
+    "@ja-platform/evaluator": "workspace:*",
     "io-ts": "^2.2.20"
   },
   "devDependencies": {
@@ -22,5 +22,9 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
 }

@@ -1,7 +1,7 @@
 import { Schema } from '../schema/Schema';
 import { Variable } from './Variable';
 import { EnumOption } from './EnumOption';
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 
 // Base class for any type (attribute type, object type or view definition).
 export class Type implements TypeInterface {

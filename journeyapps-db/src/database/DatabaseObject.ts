@@ -1,4 +1,4 @@
-import { VariableFormatStringScope } from '@journeyapps/evaluator';
+import { VariableFormatStringScope } from '@ja-platform/evaluator';
 import * as uuid from 'uuid';
 import { Query } from '../query/Query';
 import { RelationMatch } from '../query/queryOperations';

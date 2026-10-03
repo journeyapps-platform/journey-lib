@@ -1,7 +1,7 @@
 import { AbstractObjectTypeFactory, GenerateTypeEvent } from '../../schema/TypeFactory';
 import { Type } from '../Type';
 import { ObjectType } from '../ObjectType';
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 
 export class QueryType extends Type {
   static readonly TYPE = 'query';

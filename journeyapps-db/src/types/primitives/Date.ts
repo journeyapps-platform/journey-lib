@@ -1,5 +1,5 @@
-import { Day, pureDate } from '@journeyapps/core-date';
-import { DateType as SchemaDateType } from '@journeyapps/parser-schema';
+import { Day, pureDate } from '@ja-platform/core-date';
+import { DateType as SchemaDateType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 const moment = require('moment');
 

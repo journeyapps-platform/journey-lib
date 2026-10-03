@@ -1,4 +1,4 @@
-import { DatetimeType as SchemaDatetimeType } from '@journeyapps/parser-schema';
+import { DatetimeType as SchemaDatetimeType } from '@ja-platform/parser-schema';
 import { DBTypeMixin } from '../Type';
 import moment = require('moment');
 

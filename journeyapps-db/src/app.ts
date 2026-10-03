@@ -1,4 +1,4 @@
-export { Day } from '@journeyapps/core-date';
+export { Day } from '@ja-platform/core-date';
 
 export * from './database/Batch';
 export * from './database/Collection';

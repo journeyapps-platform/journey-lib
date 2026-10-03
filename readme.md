@@ -6,12 +6,12 @@ Journey JavaScript library and database accessor
 
 1. Get the module from yarn
 
-    `pnpm add @journeyapps/db`
+    `pnpm add @ja-platform/db`
 
 2. import the helper DB (my_script.js)
 
     ```javascript
-    const { Database } = require("@journeyapps/db");
+    const { Database } = require("@ja-platform/db");
     async function run() {
         const db = await Database.instance({ baseUrl: 'http://test.test/api/v4/testaccount', token: process.env.API_TOKEN });
 

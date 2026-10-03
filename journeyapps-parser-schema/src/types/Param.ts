@@ -1,4 +1,4 @@
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 import { AbstractObjectTypeFactory } from '../schema/TypeFactory';
 import { Type } from './Type';
 import { GenerateVariableEvent, Variable, VariableJsonType } from './Variable';

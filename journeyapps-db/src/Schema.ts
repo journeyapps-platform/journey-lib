@@ -1,4 +1,4 @@
-import { Schema, PrimitiveTypeName, InferGetType } from '@journeyapps/parser-schema';
+import { Schema, PrimitiveTypeName, InferGetType } from '@ja-platform/parser-schema';
 import { DBPrimitiveTypeFactory, DBPrimitiveTypeMap } from './types/primitives';
 import { ObjectTypeFactory } from './types/ObjectType';
 import { QueryTypeFactory } from './types/QueryType';

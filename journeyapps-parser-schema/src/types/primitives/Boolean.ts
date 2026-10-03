@@ -1,4 +1,4 @@
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 import { ChoiceType } from './ChoiceType';
 
 export class BooleanType extends ChoiceType {

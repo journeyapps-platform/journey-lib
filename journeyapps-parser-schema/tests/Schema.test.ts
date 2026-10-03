@@ -1,6 +1,6 @@
-import { Version } from '@journeyapps/parser-common';
+import { Version } from '@ja-platform/parser-common';
 import { describe, it, expect } from 'vitest';
-import * as blackmontapp_xml from '@journeyapps/core-xml';
+import * as blackmontapp_xml from '@ja-platform/core-xml';
 import { jsonParser, ObjectType, parseJsonField, parser2, parser3, Schema, TextType } from '../src';
 
 // @ts-ignore

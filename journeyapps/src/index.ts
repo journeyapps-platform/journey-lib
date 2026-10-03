@@ -1,6 +1,6 @@
 import db = require('./db');
 import util = require('./util');
 export { db, util };
-export { OnlineDB } from '@journeyapps/db';
-export { Day } from '@journeyapps/core-date';
+export { OnlineDB } from '@ja-platform/db';
+export { Day } from '@ja-platform/core-date';
 export * from './db/database';

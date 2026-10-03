@@ -1,4 +1,4 @@
-import { TypeInterface } from '@journeyapps/evaluator';
+import { TypeInterface } from '@ja-platform/evaluator';
 import { Schema } from '../schema/Schema';
 import { parseJsonVariable } from '../schema/schemaParser';
 import { Type } from './Type';

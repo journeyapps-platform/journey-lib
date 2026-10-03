@@ -1,4 +1,4 @@
-import { Day } from '@journeyapps/core-date';
+import { Day } from '@ja-platform/core-date';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DBSchema as Schema, query, Type, Variable } from '../src';
 
