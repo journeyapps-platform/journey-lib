@@ -8,7 +8,7 @@ export function stringify(source: ExpressionSource): string {
   if (typeof source === 'string') {
     text = source;
   } else {
-    text = source.map((token) => token.stringify()).join('');
+    text = source.map((token) => token.raw()).join('');
   }
   return text;
 }

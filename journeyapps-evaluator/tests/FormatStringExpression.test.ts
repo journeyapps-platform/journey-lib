@@ -1,3 +1,4 @@
+import { TextType } from '../src';
 import { describe, expect, it } from 'vitest';
 import {
   AbstractExpression,
@@ -6,9 +7,7 @@ import {
   FormatStringExpression,
   FunctionExpression,
   EvaluatedExpression,
-  PrimitiveConstantExpression,
   ShorthandExpression,
-  TextExpression,
   AbstractToken,
   TextToken,
   PlaceholderToken,
@@ -27,7 +26,7 @@ describe('FormatStringExpression', () => {
       FunctionExpression
     ]);
     const call = expression.parameters[1] as FunctionExpression;
-    expect(call.code.sourceOf(call.arguments[0])).toBe('true');
+    expect(call.codeToken.sourceOf(call.arguments[0])).toBe('true');
     expect(expression.tokens.map((token) => token.constructor)).toEqual([
       TextToken,
       PlaceholderToken,
@@ -38,9 +37,9 @@ describe('FormatStringExpression', () => {
     expect(placeholder.expression).toBe(call);
     expect(placeholder.children.map((token) => token.constructor)).toEqual([PrefixToken, JSToken]);
     expect(placeholder.start).toBe(source.indexOf('{$:'));
-    expect(call.code.start).toBe(source.indexOf('getGreeting'));
-    expect(call.code.sourceOf(call.arguments[0])).toBe('true');
-    expect(expression.stringify()).toBe(source);
+    expect(call.codeToken.start).toBe(source.indexOf('getGreeting'));
+    expect(call.codeToken.sourceOf(call.arguments[0])).toBe('true');
+    expect(expression.raw()).toBe(source);
   });
 
   it.each(['Plain text', '{{person.name}}', '{person.name', '{$:foo({3, "xyz")}'])(
@@ -49,16 +48,22 @@ describe('FormatStringExpression', () => {
       const expression = FormatStringExpression.parse(source);
       expect(expression.parameters).toEqual([]);
       expect(expression.tokens).toEqual([new TextToken(source)]);
-      expect(expression.stringify()).toBe(source);
+      expect(expression.raw()).toBe(source);
     }
   );
 
-  it('keeps constant placeholders as expressions instead of merging them into surrounding text', () => {
-    const expression = FormatStringExpression.parse('Plain {123} {false} {null}');
-    expect(expression.parameters).toHaveLength(3);
-    expect(expression.parameters.map((parameter: ConstantExpression) => parameter.value())).toEqual([123, false, null]);
-    expect(expression.evaluate(null)).toBe('Plain 123 false ');
-    expect(expression.stringify()).toBe('Plain {123} {false} {null}');
+  it('preserves constant placeholder text through synchronous and asynchronous rendering', async () => {
+    const source = 'Plain {1e3} {false} {null} {"hello"}';
+    const expression = FormatStringExpression.parse(source);
+    expect(expression.parameters.map((parameter: ConstantExpression) => parameter.value())).toEqual([
+      '1e3',
+      'false',
+      'null',
+      '"hello"'
+    ]);
+    expect(expression.evaluate(null)).toBe('Plain 1e3 false null "hello"');
+    expect(await expression.evaluatePromise(null)).toBe('Plain 1e3 false null "hello"');
+    expect(expression.raw()).toBe(source);
   });
 
   it('retains format syntax and source positions', () => {
@@ -67,7 +72,7 @@ describe('FormatStringExpression', () => {
     expect(expression.parameters[0].format).toBe('.2f');
     expect(expression.parameters[0].start).toBe(1);
     expect(expression.tokens.at(-1)).toEqual(new TextToken('!', 12));
-    expect(expression.stringify()).toBe('R{price:.2f}!');
+    expect(expression.raw()).toBe('R{price:.2f}!');
   });
 
   it.each([
@@ -92,7 +97,7 @@ describe('FormatStringExpression', () => {
     );
     expect(expression.parameters[0].start).toBe(7);
     expect(expression.tokens.filter((token) => token instanceof PlaceholderToken)).toHaveLength(1);
-    expect(expression.stringify()).toBe(source);
+    expect(expression.raw()).toBe(source);
   });
 
   it('encodes constructed text and expressions for their destination syntax', () => {
@@ -101,20 +106,25 @@ describe('FormatStringExpression', () => {
       new PlaceholderToken(ShorthandExpression.parse('person.name')),
       new TextToken(' '),
       new PlaceholderToken(FunctionExpression.parse('$:greet("world")')),
-      new PlaceholderToken(TextExpression.deserialize("it's fine"))
+      new PlaceholderToken(ConstantExpression.parse("it's fine", TextType))
     ]);
-    expect(expression.stringify()).toBe("Hello {{literal}} {person.name} {$:greet(\"world\")}{'it\\'s fine'}");
+    expect(expression.raw()).toBe('Hello {{literal}} {person.name} {$:greet("world")}{it\'s fine}');
     expect(expression.parameters).toHaveLength(3);
   });
 
-  it('replaces parameters without changing source text outside their placeholders', () => {
+  it('replaces parameters without changing source text outside their placeholders', async () => {
     const expression = FormatStringExpression.parse('Hello {{literal}} {user.name}, {$:greet(true)}!');
     const updated = expression.withParameters([
-      TextExpression.deserialize('Dylan'),
-      (expression.parameters[1] as FunctionExpression).withArguments([PrimitiveConstantExpression.deserialize(false)])
+      ConstantExpression.parse('Dylan', TextType),
+      (expression.parameters[1] as FunctionExpression).withArguments([ConstantExpression.parse('false', TextType)])
     ]);
-    expect(updated.stringify()).toBe("Hello {{literal}} {'Dylan'}, {$:greet(false)}!");
-    expect(expression.stringify()).toBe('Hello {{literal}} {user.name}, {$:greet(true)}!');
+    expect(updated.raw()).toBe('Hello {{literal}} {Dylan}, {$:greet(false)}!');
+    expect(updated.parameters[0]).toBeInstanceOf(ConstantExpression);
+    expect((updated.parameters[0] as ConstantExpression).value()).toBe('Dylan');
+    expect(updated.parameters[1].tokens[0].start).toBe(updated.raw().indexOf('$:'));
+    const scope = { evaluateFunctionExpression: async () => 'hello' };
+    expect(await updated.evaluatePromise(scope as any)).toBe('Hello {literal} Dylan, hello!');
+    expect(expression.raw()).toBe('Hello {{literal}} {user.name}, {$:greet(true)}!');
     expect(() => expression.withParameters([])).toThrow();
   });
 
@@ -123,10 +133,10 @@ describe('FormatStringExpression', () => {
     const clone = expression.clone();
     expect(clone.parameters[0]).not.toBe(expression.parameters[0]);
     expect(clone.tokens[0]).toBe(expression.tokens[0]);
-    expect(((clone.parameters[0] as FunctionExpression).code as JSToken).ast).not.toBe(
-      ((expression.parameters[0] as FunctionExpression).code as JSToken).ast
+    expect(((clone.parameters[0] as FunctionExpression).codeToken as JSToken).ast).not.toBe(
+      ((expression.parameters[0] as FunctionExpression).codeToken as JSToken).ast
     );
-    expect(clone.stringify()).toBe(expression.stringify());
+    expect(clone.raw()).toBe(expression.raw());
   });
   it('keeps prefixed calls and evaluated values distinct through rendering', async () => {
     const expression = FormatStringExpression.parse('Value {$:true}, call {$:getGreeting()}');
@@ -134,7 +144,7 @@ describe('FormatStringExpression', () => {
       EvaluatedExpression,
       FunctionExpression
     ]);
-    expect(expression.evaluate(null)).toBe(expression.stringify());
+    expect(expression.evaluate(null)).toBe(expression.raw());
     const evaluated: string[] = [];
     const scope = {
       evaluateFunctionExpression: async (source: string) => {
@@ -147,9 +157,11 @@ describe('FormatStringExpression', () => {
   });
 
   it.each(['save()', '[1,2]', 'ready ? greet() : null', '`template`'])(
-    'requires the evaluation prefix for executable placeholder code: %s',
+    'preserves unprefixed code as constant text: %s',
     (source) => {
-      expect(() => FormatStringExpression.parse(`Before {${source}} after`)).toThrow(SyntaxError);
+      const expression = FormatStringExpression.parse(`Before {${source}} after`);
+      expect(expression.parameters[0]).toBeInstanceOf(ConstantExpression);
+      expect(expression.evaluate(null)).toBe(`Before ${source} after`);
       expect(FormatStringExpression.parse(`Before {$:${source}} after`).parameters[0]).toBeInstanceOf(
         EvaluatedExpression
       );

@@ -1,30 +1,31 @@
+import { TextType } from '../src';
 import { describe, expect, it } from 'vitest';
-import { FunctionExpression, TextExpression, PrimitiveConstantExpression, JSToken } from '../src';
+import { FunctionExpression, ConstantExpression, JSToken } from '../src';
 
 describe('FunctionExpression', () => {
   it('changes argument count while retaining the wrapper, comments and source', () => {
     const expression = FunctionExpression.parse('/* save */ $:save(true); // end');
-    expect(expression.withArguments([]).stringify()).toBe('/* save */ $:save(); // end');
+    expect(expression.withArguments([]).raw()).toBe('/* save */ $:save(); // end');
     expect(
-      expression.withArguments([TextExpression.deserialize('one'), TextExpression.deserialize('two')]).stringify()
+      expression
+        .withArguments([ConstantExpression.parse("'one'", TextType), ConstantExpression.parse("'two'", TextType)])
+        .raw()
     ).toBe("/* save */ $:save('one', 'two'); // end");
   });
   it('changes the call target without changing matching text in comments or arguments', () => {
     const expression = FunctionExpression.parse('/* save */ $:save("save"); // save');
-    expect(expression.withName('update').stringify()).toBe('/* save */ $:update("save"); // save');
+    expect(expression.withName('update').raw()).toBe('/* save */ $:update("save"); // save');
   });
   it('replaces arguments while preserving surrounding tokens and evaluation source', async () => {
     const source = '$:save( /* first */ "before", find(true) )';
     const expression = FunctionExpression.parse(source);
     const updated = expression.withArguments([
-      TextExpression.deserialize("it's after"),
+      ConstantExpression.parse("'it\\'s after'", TextType),
       FunctionExpression.parse('$:find(false)')
     ]);
-    expect(updated.stringify()).toBe("$:save( /* first */ 'it\\'s after', find(false) )");
-    expect(expression.stringify()).toBe(source);
-    expect(expression.withArgumentSources(['42', 'find(false)']).stringify()).toBe(
-      '$:save( /* first */ 42, find(false) )'
-    );
+    expect(updated.raw()).toBe("$:save( /* first */ 'it\\'s after', find(false) )");
+    expect(expression.raw()).toBe(source);
+    expect(expression.withArgumentSources(['42', 'find(false)']).raw()).toBe('$:save( /* first */ 42, find(false) )');
     let evaluated: string;
     await updated.evaluatePromise({
       evaluateFunctionExpression: async (source) => {
@@ -35,17 +36,17 @@ describe('FunctionExpression', () => {
   });
   it('keeps parenthesized arguments and ignores punctuation inside comments when editing', () => {
     const expression = FunctionExpression.parse('$:save /* (comment) */ (first, (second, third))');
-    expect(expression.withArgumentSources([expression.code.sourceOf(expression.arguments[1])]).stringify()).toBe(
+    expect(expression.withArgumentSources([expression.codeToken.sourceOf(expression.arguments[1])]).raw()).toBe(
       '$:save /* (comment) */ ((second, third))'
     );
-    expect(expression.withArguments([]).stringify()).toBe('$:save /* (comment) */ ()');
+    expect(expression.withArguments([]).raw()).toBe('$:save /* (comment) */ ()');
   });
   it('owns its Babel tree when cloned', () => {
     const expression = FunctionExpression.parse('$:save(find(true))');
     const clone = expression.clone();
-    expect((clone.code as JSToken).ast).not.toBe((expression.code as JSToken).ast);
+    expect((clone.codeToken as JSToken).ast).not.toBe((expression.codeToken as JSToken).ast);
     expect(clone.arguments[0]).not.toBe(expression.arguments[0]);
-    expect(clone.stringify()).toBe(expression.stringify());
+    expect(clone.raw()).toBe(expression.raw());
   });
   it('exposes validity when replacing a call with another expression type', () => {
     const expression = FunctionExpression.parse('$:save()');

@@ -1,9 +1,12 @@
 import { ExpressionParser } from '../../ExpressionParser';
-import { requireExpression } from '../../utils/parserUtils';
 import { AbstractExpression, AbstractExpressionOptions } from '../AbstractExpression';
 import { AbstractToken, CodeToken, codeToken, ExpressionSource, JSToken } from '../../tokens';
 import { FormatStringScope } from '../../definitions/FormatStringScope';
 import { formatValueAsync } from '../../utils/formatStringUtils';
+
+export interface ShorthandExpressionOptions extends AbstractExpressionOptions {
+  format?: string;
+}
 
 /**
  * A reference resolved through the scope without an evaluation prefix.
@@ -12,24 +15,28 @@ import { formatValueAsync } from '../../utils/formatStringUtils';
  *
  * @example
  * ```ts
- * ShorthandExpression.parse('user.name').text(); // 'user.name'
- * ShorthandExpression.parse('items[0].name').stringify(); // 'items[0].name'
+ * ShorthandExpression.parse('user.name').path; // 'user.name'
+ * ShorthandExpression.parse('items[0].name').raw(); // 'items[0].name'
  * ```
  */
 export class ShorthandExpression<
-  O extends AbstractExpressionOptions = AbstractExpressionOptions
+  O extends ShorthandExpressionOptions = ShorthandExpressionOptions
 > extends AbstractExpression<O> {
   static TYPE = 'shorthand-expression';
 
   static parse(source: ExpressionSource, start = 0): ShorthandExpression {
-    return requireExpression(new ShorthandExpressionParser(), source, start);
+    return new ShorthandExpressionParser().parse(source, start);
   }
 
   constructor(options: O) {
     super(ShorthandExpression.TYPE, options);
   }
 
-  get code(): CodeToken {
+  get format(): string | null {
+    return this.options.format ?? null;
+  }
+
+  get codeToken(): CodeToken {
     return codeToken(this.tokens);
   }
 
@@ -38,20 +45,20 @@ export class ShorthandExpression<
     return code.length === 1 && code[0].isReferenceExpression();
   }
 
-  text(): string {
-    return this.expression;
+  get path(): string {
+    return this.codeToken.code;
   }
 
   async evaluatePromise(scope: FormatStringScope) {
-    const value = await scope.getValuePromise(this.expression);
-    return formatValueAsync(value, scope.getExpressionType(this.expression), this.format);
+    const value = await scope.getValuePromise(this.path);
+    return formatValueAsync(value, scope.getExpressionType(this.path), this.format);
   }
 }
 
 /**
  * Recognize the syntax owned by ShorthandExpression.
  */
-export class ShorthandExpressionParser implements ExpressionParser<ShorthandExpression> {
+export class ShorthandExpressionParser extends ExpressionParser<ShorthandExpression> {
   tryParse(source: ExpressionSource, start = 0): ShorthandExpression | null {
     let expression: ShorthandExpression | null = null;
     try {
@@ -62,7 +69,6 @@ export class ShorthandExpressionParser implements ExpressionParser<ShorthandExpr
         tokens = source;
       }
       const candidate = new ShorthandExpression({
-        expression: tokens.find((token): token is CodeToken => token instanceof CodeToken)?.code ?? '',
         tokens
       });
       if (candidate.isValid()) {

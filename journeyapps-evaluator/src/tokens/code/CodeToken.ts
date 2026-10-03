@@ -93,8 +93,8 @@ export abstract class CodeToken<Argument = unknown> extends AbstractToken {
    * @example
    * ```ts
    * const token = new JSToken('save(true)');
-   * token.withName('worker.persist').stringify(); // 'worker.persist(true)'
-   * token.stringify(); // 'save(true)'
+   * token.withName('worker.persist').raw(); // 'worker.persist(true)'
+   * token.raw(); // 'save(true)'
    * ```
    */
   abstract withName(name: string): CodeToken<Argument>;
@@ -105,7 +105,7 @@ export abstract class CodeToken<Argument = unknown> extends AbstractToken {
    *
    * @example
    * ```ts
-   * new JSToken('save(true)').withArguments(['user.name', 'false']).stringify();
+   * new JSToken('save(true)').withArguments(['user.name', 'false']).raw();
    * // 'save(user.name, false)'
    * ```
    */
@@ -125,7 +125,7 @@ export abstract class CodeToken<Argument = unknown> extends AbstractToken {
    *   }
    *   return null;
    * });
-   * rewritten.stringify(); // 'user.name + state.total'
+   * rewritten.raw(); // 'user.name + state.total'
    * ```
    */
   abstract rewriteReferences(rewrite: (reference: CodeReference) => CodeToken | null): CodeToken<Argument>;
@@ -138,7 +138,7 @@ export abstract class CodeToken<Argument = unknown> extends AbstractToken {
   /**
    * Reproduce the original source, including surrounding whitespace and comments.
    */
-  stringify(): string {
+  raw(): string {
     return this.source;
   }
 }

@@ -11,11 +11,11 @@ export abstract class AbstractToken {
   }
 
   get end(): number {
-    return this.start + this.stringify().length;
+    return this.start + this.raw().length;
   }
 
-  stringify(): string {
-    return this.children.map((child) => child.stringify()).join('');
+  raw(): string {
+    return this.children.map((child) => child.raw()).join('');
   }
 }
 

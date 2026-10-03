@@ -14,8 +14,8 @@ export class PlaceholderToken extends AbstractToken {
     return this.expression.tokens;
   }
 
-  stringify(): string {
-    return `{${this.expression.stringify()}}`;
+  raw(): string {
+    return `{${this.expression.raw()}}`;
   }
 
   clone(): PlaceholderToken {

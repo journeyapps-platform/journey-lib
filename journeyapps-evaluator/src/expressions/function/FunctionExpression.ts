@@ -1,5 +1,4 @@
 import { ExpressionParser } from '../../ExpressionParser';
-import { requireExpression } from '../../utils/parserUtils';
 import { AbstractExpression, AbstractExpressionOptions } from '../AbstractExpression';
 import { EvaluatedExpression, EvaluatedExpressionParser } from '../EvaluatedExpression';
 import { CodeToken, ExpressionSource } from '../../tokens';
@@ -12,15 +11,15 @@ import { CodeToken, ExpressionSource } from '../../tokens';
  * ```ts
  * const expression = FunctionExpression.parse('$:save(true)');
  * expression.functionName(); // 'save'
- * expression.withName('persist').stringify(); // '$:persist(true)'
- * expression.withArgumentSources(['false']).stringify(); // '$:save(false)'
+ * expression.withName('persist').raw(); // '$:persist(true)'
+ * expression.withArgumentSources(['false']).raw(); // '$:save(false)'
  * ```
  */
 export class FunctionExpression extends EvaluatedExpression {
   static TYPE = 'function-expression';
 
   static parse(source: ExpressionSource, start = 0): FunctionExpression {
-    return requireExpression(new FunctionExpressionParser(), source, start);
+    return new FunctionExpressionParser().parse(source, start);
   }
 
   constructor(options: AbstractExpressionOptions) {
@@ -32,32 +31,29 @@ export class FunctionExpression extends EvaluatedExpression {
     return super.isValid() && this.tokens.some((token) => token instanceof CodeToken && token.isCallExpression());
   }
 
-  /**
-   * The code token backing this function call.
-   */
-  get code(): CodeToken {
-    return this.codeToken;
-  }
-
   get arguments(): CodeToken['arguments'] {
-    return this.code.arguments;
+    return this.codeToken.arguments;
   }
 
   functionName(): string {
-    return this.code.functionName();
+    return this.codeToken.functionName();
   }
 
   withName(name: string): this {
-    return this.withCode(this.code.withName(name));
+    return this.withCode(this.codeToken.withName(name));
   }
 
+  /**
+   * Replace arguments using expression source in the code token's language.
+   * Constant text is inserted verbatim; callers supply any required quoting or escaping.
+   */
   withArguments(args: readonly AbstractExpression[]): this {
     const argumentsSource = args.map((argument) => {
       let source: string;
       if (argument instanceof EvaluatedExpression) {
-        source = argument.text();
+        source = argument.code();
       } else {
-        source = argument.stringify();
+        source = argument.raw();
       }
       return source;
     });
@@ -65,14 +61,14 @@ export class FunctionExpression extends EvaluatedExpression {
   }
 
   withArgumentSources(args: readonly string[]): this {
-    return this.withCode(this.code.withArguments(args));
+    return this.withCode(this.codeToken.withArguments(args));
   }
 }
 
 /**
  * Recognize the syntax owned by FunctionExpression.
  */
-export class FunctionExpressionParser implements ExpressionParser<FunctionExpression> {
+export class FunctionExpressionParser extends ExpressionParser<FunctionExpression> {
   tryParse(source: ExpressionSource, start = 0): FunctionExpression | null {
     const evaluated = new EvaluatedExpressionParser().tryParse(source, start);
     let expression: FunctionExpression | null = null;

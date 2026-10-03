@@ -25,25 +25,22 @@ describe('Expression validity', () => {
   });
 
   it('validates supplied token structure and nested placeholders', () => {
-    const call = new FunctionExpression({ expression: '', tokens: [new PrefixToken(), new JSToken('true')] });
+    const call = new FunctionExpression({ tokens: [new PrefixToken(), new JSToken('true')] });
     expect(call.isValid()).toBe(false);
-    const missingCode = new EvaluatedExpression({ expression: '', tokens: [new PrefixToken()] });
+    const missingCode = new EvaluatedExpression({ tokens: [new PrefixToken()] });
     expect(missingCode.isValid()).toBe(false);
-    const reversed = new EvaluatedExpression({ expression: '', tokens: [new JSToken('true'), new PrefixToken()] });
+    const reversed = new EvaluatedExpression({ tokens: [new JSToken('true'), new PrefixToken()] });
     expect(reversed.isValid()).toBe(false);
-    const format = new FormatStringExpression({ expression: '', tokens: [new PlaceholderToken(call)] });
+    const format = new FormatStringExpression({ tokens: [new PlaceholderToken(call)] });
     expect(format.isValid()).toBe(false);
-    expect(new FormatStringExpression({ expression: '', tokens: [new JSToken('save()')] }).isValid()).toBe(false);
-    expect(new ShorthandExpression({ expression: '', tokens: [new TextToken('user.name')] }).isValid()).toBe(false);
+    expect(new FormatStringExpression({ tokens: [new JSToken('save()')] }).isValid()).toBe(false);
+    expect(new ShorthandExpression({ tokens: [new TextToken('user.name')] }).isValid()).toBe(false);
     expect(
       new FormatShorthandExpression({
-        expression: 'user.name',
         format: '.2f',
         tokens: [new JSToken('user.name'), new TextToken(':.2f')]
       }).isValid()
     ).toBe(true);
-    expect(
-      new FormatShorthandExpression({ expression: 'save()', format: '', tokens: [new JSToken('save()')] }).isValid()
-    ).toBe(false);
+    expect(new FormatShorthandExpression({ format: '', tokens: [new JSToken('save()')] }).isValid()).toBe(false);
   });
 });

@@ -1,10 +1,8 @@
-import { AbstractExpressionOptions } from '../AbstractExpression';
 import { ExpressionParser } from '../../ExpressionParser';
-import { requireExpression } from '../../utils/parserUtils';
-import { ShorthandExpression, ShorthandExpressionParser } from './ShorthandExpression';
+import { ShorthandExpression, ShorthandExpressionOptions, ShorthandExpressionParser } from './ShorthandExpression';
 import { AbstractToken, ExpressionSource, TextToken, stringify } from '../../tokens';
 
-export interface FormatShorthandExpressionOptions extends AbstractExpressionOptions {
+export interface FormatShorthandExpressionOptions extends ShorthandExpressionOptions {
   format: string;
 }
 
@@ -16,16 +14,16 @@ export interface FormatShorthandExpressionOptions extends AbstractExpressionOpti
  * @example
  * ```ts
  * const expression = FormatShorthandExpression.parse('price:.2f');
- * expression.expression; // 'price'
+ * expression.path; // 'price'
  * expression.format; // '.2f'
- * expression.stringify(); // 'price:.2f'
+ * expression.raw(); // 'price:.2f'
  * ```
  */
 export class FormatShorthandExpression extends ShorthandExpression<FormatShorthandExpressionOptions> {
   static readonly TYPE = 'format-shorthand-expression';
 
   static parse(source: ExpressionSource, start = 0): FormatShorthandExpression {
-    return requireExpression(new FormatShorthandExpressionParser(), source, start);
+    return new FormatShorthandExpressionParser().parse(source, start);
   }
 
   constructor(options: FormatShorthandExpressionOptions) {
@@ -36,16 +34,12 @@ export class FormatShorthandExpression extends ShorthandExpression<FormatShortha
   isValid(): boolean {
     return super.isValid() && typeof this.format === 'string' && /^[\w.]+$/.test(this.format);
   }
-
-  text(): string {
-    return `${this.expression}:${this.format}`;
-  }
 }
 
 /**
  * Recognize the syntax owned by FormatShorthandExpression.
  */
-export class FormatShorthandExpressionParser implements ExpressionParser<FormatShorthandExpression> {
+export class FormatShorthandExpressionParser extends ExpressionParser<FormatShorthandExpression> {
   tryParse(source: ExpressionSource, start = 0): FormatShorthandExpression | null {
     const text = stringify(source);
     const match = text.match(/:\s*([\w.]+)\s*$/);
@@ -60,7 +54,7 @@ export class FormatShorthandExpressionParser implements ExpressionParser<FormatS
         } else {
           tokens = source;
         }
-        expression = new FormatShorthandExpression({ expression: shorthand.expression, format: match[1], tokens });
+        expression = new FormatShorthandExpression({ format: match[1], tokens });
       }
     }
     return expression;

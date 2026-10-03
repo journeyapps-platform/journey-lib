@@ -1,17 +1,19 @@
+import { TextType } from '../src';
 import { describe, expect, it } from 'vitest';
 import {
+  ExpressionParser,
+  ExpressionSource,
   parseExpression,
   CombinedParser,
   FunctionExpressionParser,
   ShorthandExpressionParser,
   EvaluatedExpressionParser,
+  ConstantExpressionParser,
   FormatStringExpressionParser,
   PlaceholderToken,
   ConstantExpression,
   FunctionExpression,
   ShorthandExpression,
-  TextExpression,
-  PrimitiveConstantExpression,
   EvaluatedExpression,
   FormatShorthandExpression,
   JSToken,
@@ -19,18 +21,28 @@ import {
 } from '../src';
 
 describe('Expression parser composition', () => {
-  it.each([
-    ['false', false, PrimitiveConstantExpression],
-    ['1e3', 1000, PrimitiveConstantExpression],
-    ["'it\\'s fine'", "it's fine", TextExpression],
-    ['"Hello"', 'Hello', TextExpression],
-    ['null', null, ConstantExpression]
-  ])('preserves the syntax and typed value of %s', (source, value, Type) => {
-    const expression = parseExpression(String(source)) as ConstantExpression;
-    expect(expression).toBeInstanceOf(Type);
-    expect(expression.value()).toBe(value);
-    expect(expression.stringify()).toBe(source);
+  it('combines evaluated syntax with literal text without inferring the target value type', async () => {
+    const parser = new CombinedParser<EvaluatedExpression | ConstantExpression>([
+      new FunctionExpressionParser(),
+      new EvaluatedExpressionParser(),
+      new ConstantExpressionParser()
+    ]);
+    const literal = parser.tryParse('1e3');
+    expect(await literal.evaluatePromise(null)).toBe('1e3');
+    expect(parser.tryParse('$:count()')).toBeInstanceOf(FunctionExpression);
+    expect(parser.tryParse('$:count + 1')).toBeInstanceOf(EvaluatedExpression);
+    expect(() => parser.tryParse('$:broken(')).toThrow(SyntaxError);
   });
+
+  it.each(['false', '1e3', "'it\\'s fine'", '"Hello"', 'null'])(
+    'preserves constant %s without decoding it',
+    (source) => {
+      const expression = parseExpression(source) as ConstantExpression;
+      expect(expression).toBeInstanceOf(ConstantExpression);
+      expect(expression.value()).toBe(source);
+      expect(expression.raw()).toBe(source);
+    }
+  );
 
   it.each(['user.name', 'user[field]', "user['name'].length", 'shared.func().something', 'user?.name'])(
     'keeps reference structure in Babel: %s',
@@ -38,8 +50,8 @@ describe('Expression parser composition', () => {
       const expression = parseExpression(source) as ShorthandExpression;
       expect(expression).toBeInstanceOf(ShorthandExpression);
       expect(expression.tokens).toHaveLength(1);
-      expect((expression.code as JSToken).ast.type).toMatch(/MemberExpression/);
-      expect(expression.stringify()).toBe(source);
+      expect((expression.codeToken as JSToken).ast.type).toMatch(/MemberExpression/);
+      expect(expression.raw()).toBe(source);
     }
   );
 
@@ -49,7 +61,7 @@ describe('Expression parser composition', () => {
       const expression = parseExpression(source);
       expect(expression).toBeInstanceOf(EvaluatedExpression);
       expect(expression.constructor).toBe(source === '$:foo()' ? FunctionExpression : EvaluatedExpression);
-      expect(expression.stringify()).toBe(source);
+      expect(expression.raw()).toBe(source);
     }
   );
 
@@ -57,18 +69,18 @@ describe('Expression parser composition', () => {
     const source = ' $:save("Hello", [true, user.name], {value: find(null)}) /* end */ ';
     const expression = FunctionExpression.parse(source);
     expect(expression.functionName()).toBe('save');
-    expect((expression.code as JSToken).arguments.map((argument) => argument.type)).toEqual([
+    expect((expression.codeToken as JSToken).arguments.map((argument) => argument.type)).toEqual([
       'StringLiteral',
       'ArrayExpression',
       'ObjectExpression'
     ]);
-    const object = (expression.code as JSToken).arguments[2];
+    const object = (expression.codeToken as JSToken).arguments[2];
     expect(object.type).toBe('ObjectExpression');
     if (object.type === 'ObjectExpression' && object.properties[0].type === 'ObjectProperty') {
       expect(object.properties[0].value.type).toBe('CallExpression');
     }
     expect(expression.tokens.filter((token) => token instanceof JSToken)).toHaveLength(1);
-    expect(expression.stringify()).toBe(source);
+    expect(expression.raw()).toBe(source);
   });
 
   it('preserves operators, parentheses and conditional branch types', () => {
@@ -84,14 +96,14 @@ describe('Expression parser composition', () => {
         'NullLiteral'
       ]);
     }
-    expect(expression.stringify()).toBe(source);
-    expect(expression.text()).toBe('(ready || enabled) ? "Yes" : null');
+    expect(expression.raw()).toBe(source);
+    expect(expression.code()).toBe('(ready || enabled) ? "Yes" : null');
   });
 
   it.each(['value:05', 'value:.2f', 'product.price:.2f'])('recognizes format specifiers: %s', (source) => {
     const expression = parseExpression(source);
     expect(expression).toBeInstanceOf(FormatShorthandExpression);
-    expect(expression.stringify()).toBe(source);
+    expect(expression.raw()).toBe(source);
     expect(expression.format).toBe(source.includes('05') ? '05' : '.2f');
   });
 
@@ -99,7 +111,7 @@ describe('Expression parser composition', () => {
     const tokens = [new PrefixToken(20), new JSToken('save(true)', 22)];
     const expression = new FunctionExpressionParser().tryParse(tokens);
     expect(expression.tokens).toEqual(tokens);
-    expect(expression.code).toBe(tokens[1]);
+    expect(expression.codeToken).toBe(tokens[1]);
     expect(parseExpression(tokens)).toBeInstanceOf(FunctionExpression);
     expect(() => FunctionExpression.parse('true')).toThrow(SyntaxError);
     expect(() => FunctionExpression.parse('')).toThrow(SyntaxError);
@@ -108,25 +120,25 @@ describe('Expression parser composition', () => {
   it('uses caller-defined order and stops after the first matching parser', () => {
     const visited: string[] = [];
     const parser = new CombinedParser([
-      {
-        tryParse: () => {
+      new (class extends ExpressionParser<ConstantExpression> {
+        tryParse() {
           visited.push('first');
           return null;
         }
-      },
-      {
-        tryParse: (source) => {
+      })(),
+      new (class extends ExpressionParser<ConstantExpression> {
+        tryParse(source: ExpressionSource) {
           visited.push('second');
-          return TextExpression.parse(source);
+          return ConstantExpression.parse(source, TextType);
         }
-      },
-      {
-        tryParse: () => {
+      })(),
+      new (class extends ExpressionParser<ConstantExpression> {
+        tryParse(): never {
           throw new Error('Must not be visited');
         }
-      }
+      })()
     ]);
-    expect(parser.tryParse('hello').stringify()).toBe('hello');
+    expect(parser.tryParse('hello').raw()).toBe('hello');
     expect(visited).toEqual(['first', 'second']);
     expect(new CombinedParser([]).tryParse('hello')).toBeNull();
   });
@@ -138,9 +150,28 @@ describe('Expression parser composition', () => {
     expect(parser.tryParse('worker')).toBeInstanceOf(ShorthandExpression);
     expect(() => parser.tryParse('$:broken(')).toThrow(SyntaxError);
     expect(new CombinedParser([new EvaluatedExpressionParser()]).tryParse('')).toBeNull();
-    expect(parseExpression('broken(')).toBeNull();
+    expect(parseExpression('broken(')).toBeInstanceOf(ConstantExpression);
     expect(() => parseExpression('$:broken(')).toThrow(SyntaxError);
   });
+  it('requires valid matches while preserving parser failures and source positions', () => {
+    const parser = new CombinedParser([new FunctionExpressionParser(), new ShorthandExpressionParser()]);
+    expect(() => parser.parse('42')).toThrow('Input does not match CombinedParser.');
+    expect(parser.parse('worker', 20).start).toBe(20);
+    const failure = new SyntaxError('Invalid source');
+    const failing = new (class extends ExpressionParser {
+      tryParse(): never {
+        throw failure;
+      }
+    })();
+    expect(() => failing.parse('source')).toThrow(failure);
+    const invalid = new (class extends ExpressionParser<EvaluatedExpression> {
+      tryParse() {
+        return new EvaluatedExpression({ tokens: [new PrefixToken()] });
+      }
+    })();
+    expect(() => invalid.parse('$:')).toThrow(SyntaxError);
+  });
+
   it('preserves offsets through composed and format-string parsers', () => {
     const functionParser = new CombinedParser([new FunctionExpressionParser()]);
     const functionExpression = functionParser.tryParse('$:save(true)', 20) as FunctionExpression;
@@ -150,6 +181,6 @@ describe('Expression parser composition', () => {
     const placeholder = format.tokens[1] as PlaceholderToken;
     expect(placeholder.expression).toBeInstanceOf(FunctionExpression);
     expect(placeholder.children.map((token) => token.start)).toEqual([107, 109]);
-    expect(format.stringify()).toBe('Hello {$:save(true)}');
+    expect(format.raw()).toBe('Hello {$:save(true)}');
   });
 });

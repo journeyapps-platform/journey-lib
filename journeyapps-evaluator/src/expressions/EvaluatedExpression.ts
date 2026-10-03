@@ -1,5 +1,4 @@
 import { ExpressionParser } from '../ExpressionParser';
-import { requireExpression } from '../utils/parserUtils';
 import { AbstractExpression, AbstractExpressionOptions } from './AbstractExpression';
 import {
   AbstractToken,
@@ -23,15 +22,15 @@ import { FormatStringScope } from '../definitions/FormatStringScope';
  *
  * @example
  * ```ts
- * EvaluatedExpression.parse('$:count + 1').text(); // 'count + 1'
- * EvaluatedExpression.parse('$:{active: true}').stringify(); // '$:{active: true}'
+ * EvaluatedExpression.parse('$:count + 1').code(); // 'count + 1'
+ * EvaluatedExpression.parse('$:{active: true}').raw(); // '$:{active: true}'
  * ```
  */
 export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOptions> {
   static TYPE = 'evaluated-expression';
 
   static parse(source: ExpressionSource, start = 0): EvaluatedExpression {
-    return requireExpression(new EvaluatedExpressionParser(), source, start);
+    return new EvaluatedExpressionParser().parse(source, start);
   }
 
   constructor(options: AbstractExpressionOptions) {
@@ -55,7 +54,6 @@ export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOp
     const Type = this.constructor as new (options: AbstractExpressionOptions) => this;
     return new Type({
       ...this.options,
-      expression: token.code,
       tokens: this.tokens.map((current) => {
         let replacement = current;
         if (current === original) {
@@ -66,19 +64,22 @@ export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOp
     });
   }
 
-  text(): string {
-    return this.expression;
+  /**
+   * Executable code without the evaluation prefix or surrounding source trivia.
+   */
+  code(): string {
+    return this.codeToken.code;
   }
 
   async evaluatePromise(scope: FormatStringScope) {
-    return scope.evaluateFunctionExpression(this.expression);
+    return scope.evaluateFunctionExpression(this.code());
   }
 }
 
 /**
  * Recognize the syntax owned by EvaluatedExpression.
  */
-export class EvaluatedExpressionParser implements ExpressionParser<EvaluatedExpression> {
+export class EvaluatedExpressionParser extends ExpressionParser<EvaluatedExpression> {
   tryParse(source: ExpressionSource, start = 0): EvaluatedExpression | null {
     let matches: boolean;
     if (typeof source === 'string') {
@@ -95,7 +96,6 @@ export class EvaluatedExpressionParser implements ExpressionParser<EvaluatedExpr
         tokens = source;
       }
       expression = new EvaluatedExpression({
-        expression: tokens.find((token): token is CodeToken => token instanceof CodeToken)?.code ?? '',
         tokens
       });
       if (!expression.isValid()) {

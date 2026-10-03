@@ -17,3 +17,5 @@ export * from './definitions/FormatStringScope';
 export * from './tools';
 
 export * from './tokens';
+
+export * from './definitions/ValueType';

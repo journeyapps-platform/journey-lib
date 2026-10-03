@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { actionableExpression, functionExpression, EvaluatedExpression, FunctionExpression } from '../src';
+import {
+  actionableExpression,
+  functionExpression,
+  EvaluatedExpression,
+  FunctionExpression,
+  ConstantExpression
+} from '../src';
 
 describe('Expression factories', () => {
   it('keeps absent expressions absent', () => {
@@ -12,6 +18,6 @@ describe('Expression factories', () => {
     expect(functionExpression('$:save()')).toBeInstanceOf(FunctionExpression);
     expect(functionExpression('$:true').constructor).toBe(EvaluatedExpression);
     expect(actionableExpression("$:{thing:'other'}").constructor).toBe(EvaluatedExpression);
-    expect(actionableExpression('save()')).toBeNull();
+    expect(actionableExpression('save()')).toBeInstanceOf(ConstantExpression);
   });
 });

@@ -1,108 +1,65 @@
-import { parseExpression as parseJavaScript } from '@babel/parser';
 import { ExpressionParser } from '../../ExpressionParser';
-import { requireExpression } from '../../utils/parserUtils';
 import { AbstractExpression, AbstractExpressionOptions } from '../AbstractExpression';
-import { AbstractToken, ExpressionSource, LiteralToken, LiteralValue, stringify } from '../../tokens';
+import { ExpressionSource, TextToken, stringify } from '../../tokens';
 import { FormatStringScope } from '../../definitions/FormatStringScope';
+import { TextType, ValueType } from '../../definitions/ValueType';
 
-export type LiteralConstantValue = LiteralValue;
+export interface ConstantExpressionOptions<T> extends AbstractExpressionOptions {
+  value: T;
+  valueType: ValueType<T>;
+}
 
 /**
- * A constant string, number, boolean or null value, with tokens preserving its original syntax.
- * Examples include `'hello'`, `42`, `1e3`, `true` and `null`.
- * Parsing decodes source literals; deserialize() creates tokens from an existing value.
- *
- * @example
- * ```ts
- * ConstantExpression.parse('1e3').value(); // 1000
- * ConstantExpression.parse('null').value(); // null
- * ConstantExpression.deserialize(false).stringify(); // 'false'
- * ```
+ * A constant with an explicitly selected value type and preserved source syntax.
+ * The caller selects the value type; types are never inferred from the source.
  */
-export class ConstantExpression<V extends LiteralConstantValue = string> extends AbstractExpression<
-  AbstractExpressionOptions<V>,
-  V
-> {
+export class ConstantExpression<T = string> extends AbstractExpression<ConstantExpressionOptions<T>, T> {
   static TYPE = 'constant-expression';
 
-  static parse(source: ExpressionSource, start = 0): ConstantExpression<LiteralConstantValue> {
-    return requireExpression(new ConstantExpressionParser(), source, start);
+  static parse<T>(source: ExpressionSource, valueType: ValueType<T>, start = 0): ConstantExpression<T> {
+    return new ConstantExpressionParser(valueType).parse(source, start);
   }
 
-  /**
-   * Serialize an existing value as a literal token without parsing source text.
-   *
-   * @example
-   * ```ts
-   * TextExpression.deserialize("it's fine").stringify(); // "'it\\'s fine'"
-   * PrimitiveConstantExpression.deserialize(false).value(); // false
-   * ```
-   */
-  static deserialize<Value extends LiteralConstantValue, Expression extends ConstantExpression<Value>>(
-    this: new (options: AbstractExpressionOptions<Value>) => Expression,
-    value: Value,
-    start = 0
-  ): Expression {
-    return new this({ expression: value, tokens: [LiteralToken.fromValue(value, start)] });
-  }
-
-  constructor(options: AbstractExpressionOptions<V>) {
+  constructor(options: ConstantExpressionOptions<T>) {
     super(ConstantExpression.TYPE, options);
   }
 
+  get valueType(): ValueType<T> {
+    return this.options.valueType;
+  }
+
   isValid(): boolean {
-    return this.expression === null || ['string', 'number', 'boolean'].includes(typeof this.expression);
+    return this.valueType.is(this.options.value);
   }
 
-  value(): V {
-    return this.expression;
+  value(): T {
+    return this.options.value;
   }
 
-  text(): string {
-    return this.options.text ?? this.stringify();
-  }
-
-  async evaluatePromise(_scope: FormatStringScope): Promise<V> {
+  async evaluatePromise(_scope: FormatStringScope): Promise<T> {
     return this.value();
   }
 }
 
 /**
- * Recognize simple literal values and delegate quoted JavaScript strings to Babel.
+ * Parse constants using the supplied type. Place last when composing other syntax.
  */
-export class ConstantExpressionParser implements ExpressionParser<ConstantExpression<LiteralConstantValue>> {
-  tryParse(source: ExpressionSource, start = 0): ConstantExpression<LiteralConstantValue> | null {
-    let token: LiteralToken | null = null;
-    if (typeof source !== 'string' && source.length === 1 && source[0] instanceof LiteralToken) {
-      token = source[0];
-    } else {
-      const text = stringify(source);
-      const literal = text.trim();
-      let value: LiteralValue | undefined;
-      if (literal === 'null') {
-        value = null;
-      } else if (literal === 'true' || literal === 'false') {
-        value = literal === 'true';
-      } else if (/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(literal)) {
-        value = Number(literal);
-      } else if (literal.startsWith("'") || literal.startsWith('"')) {
-        const node = parseJavaScript(text);
-        if (node.type === 'StringLiteral') {
-          value = node.value;
-        }
-      }
-      if (value !== undefined) {
-        token = new LiteralToken(text, value, start);
-      }
-    }
-    let expression: ConstantExpression<LiteralConstantValue> | null = null;
-    if (token) {
-      let tokens: readonly AbstractToken[] = [token];
-      if (typeof source !== 'string') {
-        tokens = source;
-      }
-      expression = new ConstantExpression({ expression: token.value, tokens });
-    }
-    return expression;
+export class ConstantExpressionParser<T = string> extends ExpressionParser<ConstantExpression<T>> {
+  readonly valueType: ValueType<T>;
+
+  constructor(...[valueType]: string extends T ? [valueType?: ValueType<T>] : [valueType: ValueType<T>]) {
+    super();
+    this.valueType = valueType ?? (TextType as ValueType<T>);
+  }
+
+  tryParse(source: ExpressionSource, start = 0): ConstantExpression<T> {
+    const text = stringify(source);
+    const tokens = typeof source === 'string' ? [new TextToken(text, start)] : source;
+    return new ConstantExpression({
+      value: this.valueType.parse(text),
+      valueType: this.valueType,
+      tokens,
+      start: tokens[0]?.start ?? start
+    });
   }
 }

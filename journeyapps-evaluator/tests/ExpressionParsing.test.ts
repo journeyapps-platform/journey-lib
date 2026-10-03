@@ -1,3 +1,4 @@
+import { TextType } from '../src';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   EvaluatedExpressionParser,
@@ -5,26 +6,22 @@ import {
   FormatShorthandExpressionParser,
   FormatStringExpressionParser,
   FunctionExpressionParser,
-  PrimitiveConstantExpressionParser,
   ShorthandExpressionParser,
-  TextExpressionParser,
   AbstractExpression,
   EvaluatedExpression,
   ConstantExpression,
   FormatShorthandExpression,
   FormatStringExpression,
   FunctionExpression,
-  PrimitiveConstantExpression,
   ShorthandExpression,
-  TextExpression,
   TextToken,
   JSToken
 } from '../src';
 
 const cases = [
-  [TextExpression, "'it\\'s fine'"],
+  [ConstantExpression, "'it\\'s fine'"],
   [ConstantExpression, 'true'],
-  [PrimitiveConstantExpression, '-1e3'],
+  [ConstantExpression, '-1e3'],
   [ConstantExpression, 'null'],
   [EvaluatedExpression, '$:[true, "text", user.name]'],
   [EvaluatedExpression, '$:[1,,3]'],
@@ -45,9 +42,7 @@ const parsers = {
   FormatShorthandExpression: new FormatShorthandExpressionParser(),
   FormatStringExpression: new FormatStringExpressionParser(),
   FunctionExpression: new FunctionExpressionParser(),
-  PrimitiveConstantExpression: new PrimitiveConstantExpressionParser(),
-  ShorthandExpression: new ShorthandExpressionParser(),
-  TextExpression: new TextExpressionParser()
+  ShorthandExpression: new ShorthandExpressionParser()
 };
 
 describe('Expression parsing', () => {
@@ -58,13 +53,13 @@ describe('Expression parsing', () => {
         const expression = Type.parse(input);
         const direct = parsers[Type.name as keyof typeof parsers].tryParse(input);
         expect(direct).toBeInstanceOf(Type);
-        expect(direct.stringify()).toBe(expression.stringify());
+        expect(direct.raw()).toBe(expression.raw());
         expect(direct.tokens).toEqual(expression.tokens);
         expect(expression).toBeInstanceOf(Type);
         expect(expression.isValid()).toBe(true);
         expect(expression).toBeInstanceOf(AbstractExpression);
-        expect(expression.stringify()).toBe(source);
-        expect(expression.clone().stringify()).toBe(source);
+        expect(expression.raw()).toBe(source);
+        expect(expression.clone().raw()).toBe(source);
         if (Array.isArray(input)) {
           expression.tokens.forEach((token, index) => expect(token).toBe(input[index]));
         }
@@ -73,17 +68,14 @@ describe('Expression parsing', () => {
   );
 
   const invalid = [
-    [ConstantExpression, 'null trailing'],
-    [PrimitiveConstantExpression, 'user.age'],
-    [PrimitiveConstantExpression, '1 + 2'],
-    [ConstantExpression, 'save()'],
     [EvaluatedExpression, '$:[1, 2'],
     [EvaluatedExpression, '$:{name:}'],
     [ShorthandExpression, 'save()'],
     [ShorthandExpression, 'user.'],
     [FormatShorthandExpression, 'price:'],
     [FunctionExpression, 'true'],
-    [FormatStringExpression, 'Hello {}']
+    [FormatStringExpression, 'Hello {}'],
+    [FormatStringExpression, 'Hello { } {name}']
   ] as const;
   it.each(invalid.map(([Type, source]) => [Type.name, Type, source] as const))(
     '%s rejects input outside its syntax: %s',
@@ -93,7 +85,7 @@ describe('Expression parsing', () => {
   );
 
   it('distinguishes plain text from a format string without a global parsing mode', () => {
-    const text = TextExpression.parse('Hello {user.name}');
+    const text = ConstantExpression.parse('Hello {user.name}', TextType);
     expect(text.value()).toBe('Hello {user.name}');
     expect(text.tokens).toHaveLength(1);
     expect(text.tokens[0]).toBeInstanceOf(TextToken);
@@ -116,7 +108,7 @@ describe('Expression parsing', () => {
   });
 
   it('exposes concrete return types at the static parsing entry points', () => {
-    expectTypeOf(TextExpression.parse('hello')).toEqualTypeOf<TextExpression>();
+    expectTypeOf(ConstantExpression.parse('hello', TextType)).toEqualTypeOf<ConstantExpression>();
     expectTypeOf(EvaluatedExpression.parse('$:[]')).toEqualTypeOf<EvaluatedExpression>();
     expectTypeOf(EvaluatedExpression.parse('$:{}')).toEqualTypeOf<EvaluatedExpression>();
     expectTypeOf(FunctionExpression.parse('$:save()')).toEqualTypeOf<FunctionExpression>();

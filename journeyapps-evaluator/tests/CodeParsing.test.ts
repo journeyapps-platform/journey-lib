@@ -74,20 +74,20 @@ describe('Code parsing batches', () => {
     const expression = FunctionExpression.parse('$:save((user.name), true); // keep');
     CodeParser.getInstance().clear();
     CodeParser.getInstance().parse('save((user.name), true); // keep', countingParser);
-    const next = FunctionExpression.parse(expression.stringify());
+    const next = FunctionExpression.parse(expression.raw());
     expect(countingParser.parse).toHaveBeenCalledTimes(2);
-    expect(expression.stringify()).toBe(next.stringify());
-    expect((expression.code as JSToken).hasTrailingLineComment).toBe(true);
-    expect(expression.code.sourceOf(expression.arguments[0])).toBe('(user.name)');
-    expect(expression.withName('send').stringify()).toBe('$:send((user.name), true); // keep');
+    expect(expression.raw()).toBe(next.raw());
+    expect((expression.codeToken as JSToken).hasTrailingLineComment).toBe(true);
+    expect(expression.codeToken.sourceOf(expression.arguments[0])).toBe('(user.name)');
+    expect(expression.withName('send').raw()).toBe('$:send((user.name), true); // keep');
   });
 
   it('keys results by exact source, including comments and whitespace', () => {
     const sources = ['save(true)', ' save(true)', 'save(true) /* keep */'];
     for (const source of sources) {
       CodeParser.getInstance().parse(source, countingParser);
-      expect(new JSToken(source).stringify()).toBe(source);
-      expect(new JSToken(source, 10).stringify()).toBe(source);
+      expect(new JSToken(source).raw()).toBe(source);
+      expect(new JSToken(source, 10).raw()).toBe(source);
     }
     expect(countingParser.parse).toHaveBeenCalledTimes(3);
   });

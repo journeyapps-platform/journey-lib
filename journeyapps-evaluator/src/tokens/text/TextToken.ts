@@ -13,7 +13,7 @@ export class TextToken extends AbstractToken {
     Object.freeze(this);
   }
 
-  stringify(): string {
+  raw(): string {
     return this.source;
   }
 
@@ -21,7 +21,7 @@ export class TextToken extends AbstractToken {
     return this;
   }
 
-  value(): string {
+  get decodedText(): string {
     return this.source.replace(/{{/g, '{').replace(/}}/g, '}');
   }
 }

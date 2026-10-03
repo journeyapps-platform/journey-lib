@@ -8,7 +8,7 @@ export class PrefixToken extends AbstractToken {
     Object.freeze(this);
   }
 
-  stringify(): string {
+  raw(): string {
     return FUNCTION_PREFIX;
   }
 

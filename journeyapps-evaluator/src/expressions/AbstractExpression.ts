@@ -1,14 +1,8 @@
 import { FormatStringScope } from '../definitions/FormatStringScope';
 import { AbstractToken } from '../tokens';
 
-export interface AbstractExpressionOptions<Value = string> {
-  expression: Value;
+export interface AbstractExpressionOptions {
   start?: number;
-  format?: string;
-  /**
-   * Original source text, retained separately from normalized literal values.
-   */
-  text?: string;
   /**
    * Complete source tokens prepared by a parser or value factory.
    * Constructors store these tokens without interpreting their source.
@@ -17,17 +11,13 @@ export interface AbstractExpressionOptions<Value = string> {
 }
 
 /**
- * Shared base for expressions assembled from source tokens and a resolved expression value.
- * Concrete types represent values such as `42`, references such as `user.name`,
+ * Shared source tokens and positions for concrete expression types.
+ * Concrete types represent constant text such as `42`, references such as `user.name`,
  * evaluated code such as `$:count + 1`, or format strings such as `Hello {user.name}`.
- * stringify() reproduces source syntax; evaluatePromise() resolves the expression through a scope.
+ * raw() reproduces source syntax; evaluatePromise() resolves the expression through a scope.
  */
-export abstract class AbstractExpression<
-  O extends AbstractExpressionOptions<any> = AbstractExpressionOptions<any>,
-  V = any
-> {
+export abstract class AbstractExpression<O extends AbstractExpressionOptions = AbstractExpressionOptions, V = any> {
   type: string;
-  expression: O['expression'];
   options: O;
 
   protected constructor(type: string, options: O) {
@@ -37,7 +27,6 @@ export abstract class AbstractExpression<
       start: options.start ?? options.tokens[0]?.start ?? 0,
       tokens: Object.freeze([...options.tokens])
     };
-    this.expression = this.options.expression;
   }
 
   /**
@@ -59,8 +48,8 @@ export abstract class AbstractExpression<
   /**
    * Reproduce source syntax, including whitespace, delimiters and escapes.
    */
-  stringify(): string {
-    return this.tokens.map((token) => token.stringify()).join('');
+  raw(): string {
+    return this.tokens.map((token) => token.raw()).join('');
   }
 
   get start(): number | null {
@@ -71,18 +60,7 @@ export abstract class AbstractExpression<
     this.options.start = start;
   }
 
-  get format(): string | null {
-    return this.options.format ?? null;
-  }
-
-  /**
-   * Return source text without evaluating the expression or converting it to a literal value.
-   */
-  text(): string {
-    return this.options.text ?? String(this.options.expression);
-  }
-
   toString(): string {
-    return '[object ' + this.constructor.name + ' <' + this.expression + ', ' + this.start + '>]';
+    return '[object ' + this.constructor.name + ' <' + this.raw() + ', ' + this.start + '>]';
   }
 }

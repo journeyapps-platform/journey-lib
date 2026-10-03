@@ -34,9 +34,9 @@ describe('JavaScript reference rewriting', () => {
   ])('distinguishes references from properties and local bindings: %s', (source, expected) => {
     const original = new JSToken(source, 10);
     const rewritten = original.rewriteReferences(replaceMessage);
-    expect(rewritten.stringify()).toBe(expected);
+    expect(rewritten.raw()).toBe(expected);
     expect(rewritten.start).toBe(10);
-    expect(original.stringify()).toBe(source);
+    expect(original.raw()).toBe(source);
     expect(rewritten.ast).not.toBe(original.ast);
   });
 
@@ -50,32 +50,32 @@ describe('JavaScript reference rewriting', () => {
         replacement = new JSToken('view.items');
       } else if (reference.isCall && ['greet', 'send'].includes(reference.name)) {
         const name = reference.name === 'greet' ? 'hello' : 'log';
-        replacement = new JSToken(`${name}(${reference.arguments.map((argument) => argument.stringify()).join(', ')})`);
+        replacement = new JSToken(`${name}(${reference.arguments.map((argument) => argument.raw()).join(', ')})`);
       }
       return replacement;
     });
-    expect(rewritten.stringify()).toBe("log(hello('Hello'), ...view.items)");
+    expect(rewritten.raw()).toBe("log(hello('Hello'), ...view.items)");
     expect(visited).toEqual(['message', 'greet', 'items', 'send']);
-    expect(original.stringify()).toBe('send(greet(message), ...items)');
+    expect(original.raw()).toBe('send(greet(message), ...items)');
   });
 
   it('preserves grouped arguments and their source positions', () => {
     const original = new JSToken('send((message), value)', 20);
     const rewritten = original.rewriteReferences((reference) => {
       if (reference.isCall && reference.name === 'send') {
-        expect(reference.arguments.map((argument) => argument.stringify())).toEqual(["('Hello')", 'value']);
+        expect(reference.arguments.map((argument) => argument.raw())).toEqual(["('Hello')", 'value']);
         expect(reference.arguments[0].start).toBe(25);
-        return new JSToken(`log(${reference.arguments.map((argument) => argument.stringify()).join(', ')})`);
+        return new JSToken(`log(${reference.arguments.map((argument) => argument.raw()).join(', ')})`);
       }
       return replaceMessage(reference);
     });
-    expect(rewritten.stringify()).toBe("log(('Hello'), value)");
+    expect(rewritten.raw()).toBe("log(('Hello'), value)");
   });
 
   it('retains surrounding whitespace, comments and semicolons', () => {
     const original = new JSToken(' /* before */ print(/* argument */ message); // after', 7);
     const rewritten = original.rewriteReferences(replaceMessage);
-    expect(rewritten.stringify()).toBe(" /* before */ print(/* argument */ 'Hello'); // after");
+    expect(rewritten.raw()).toBe(" /* before */ print(/* argument */ 'Hello'); // after");
     expect(rewritten.hasTrailingLineComment).toBe(true);
   });
 
@@ -87,17 +87,15 @@ describe('JavaScript reference rewriting', () => {
       }
       return replacement;
     });
-    expect(rewritten.stringify()).toBe('(left + right) * 2 + obj[(left + right)]');
-    expect(new JSToken('({ message })').rewriteReferences(() => new JSToken('left + right')).stringify()).toBe(
+    expect(rewritten.raw()).toBe('(left + right) * 2 + obj[(left + right)]');
+    expect(new JSToken('({ message })').rewriteReferences(() => new JSToken('left + right')).raw()).toBe(
       '({ message: (left + right) })'
     );
   });
 
   it('keeps member and constructor syntax valid for replacement values', () => {
-    expect(new JSToken('message.toString()').rewriteReferences(() => new JSToken('1')).stringify()).toBe(
-      '(1).toString()'
-    );
-    expect(new JSToken('new message()').rewriteReferences(() => new JSToken('getConstructor()')).stringify()).toBe(
+    expect(new JSToken('message.toString()').rewriteReferences(() => new JSToken('1')).raw()).toBe('(1).toString()');
+    expect(new JSToken('new message()').rewriteReferences(() => new JSToken('getConstructor()')).raw()).toBe(
       'new (getConstructor())()'
     );
   });
@@ -112,7 +110,7 @@ describe('JavaScript reference rewriting', () => {
       }
       return replacement;
     });
-    expect(rewritten.stringify()).toBe('second + third');
+    expect(rewritten.raw()).toBe('second + third');
   });
 
   it('only exposes unbound direct calls and preserves unchanged optional calls', () => {
@@ -125,6 +123,6 @@ describe('JavaScript reference rewriting', () => {
       return replaceMessage(reference);
     });
     expect(visited).toEqual(['send']);
-    expect(rewritten.stringify()).toBe("send?.('Hello') + ((send) => send('Hello'))(local)");
+    expect(rewritten.raw()).toBe("send?.('Hello') + ((send) => send('Hello'))(local)");
   });
 });

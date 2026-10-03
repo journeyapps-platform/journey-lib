@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   EvaluatedExpression,
+  ConstantExpression,
   CodeToken,
   JSToken,
   parseExpression,
@@ -86,17 +87,20 @@ describe('EvaluatedExpression', () => {
     expect(token).toBeInstanceOf(CodeToken);
     expect(token).toBeInstanceOf(JSToken);
     if (token instanceof JSToken) expect(token.ast.type).toBe(kind);
-    expect(expression.stringify()).toBe(prefixed);
+    expect(expression.raw()).toBe(prefixed);
+    expect(expression.code()).toBe(source);
     const clone = expression.clone();
     expect(clone).toBeInstanceOf(EvaluatedExpression);
     expect(clone.codeToken).not.toBe(token);
     if (token instanceof JSToken && clone.codeToken instanceof JSToken) expect(clone.codeToken.ast).not.toBe(token.ast);
-    expect(clone.stringify()).toBe(prefixed);
+    expect(clone.raw()).toBe(prefixed);
     expect(parseExpression(prefixed)).toBeInstanceOf(EvaluatedExpression);
     expect(parseExpression(prefixed).constructor).toBe(
       kind === 'CallExpression' ? FunctionExpression : EvaluatedExpression
     );
-    expect(parseExpression(source)).toBeNull();
+    const constant = parseExpression(source) as ConstantExpression;
+    expect(constant).toBeInstanceOf(ConstantExpression);
+    expect(constant.value()).toBe(source);
   });
 
   it('accepts another language without inspecting a Babel node', async () => {
@@ -104,8 +108,8 @@ describe('EvaluatedExpression', () => {
     const expression = EvaluatedExpression.parse([new PrefixToken(10), token]);
     expect(expression.codeToken).toBe(token);
     expect(parseExpression(expression.tokens)).toBeInstanceOf(EvaluatedExpression);
-    expect(expression.stringify()).toBe(`$:${token.source}`);
-    expect(expression.text()).toBe('select name from users');
+    expect(expression.raw()).toBe(`$:${token.source}`);
+    expect(expression.code()).toBe('select name from users');
     expect(expression.clone().codeToken).toBeInstanceOf(QueryToken);
     let evaluated: string;
     expect(
@@ -118,8 +122,8 @@ describe('EvaluatedExpression', () => {
     ).toBe('result');
     expect(evaluated).toBe('select name from users');
     const updated = expression.withCode(new QueryToken('select id from users'));
-    expect(updated.stringify()).toBe('$:select id from users');
-    expect(expression.stringify()).toBe(`$:${token.source}`);
+    expect(updated.raw()).toBe('$:select id from users');
+    expect(expression.raw()).toBe(`$:${token.source}`);
   });
 
   it('uses the language token for function classification and call edits', () => {
@@ -128,12 +132,12 @@ describe('EvaluatedExpression', () => {
     expect(parseExpression(expression.tokens)).toBeInstanceOf(FunctionExpression);
     expect(expression.isValid()).toBe(true);
     expect(expression.functionName()).toBe('select');
-    expect(expression.arguments.map((argument) => expression.code.sourceOf(argument))).toEqual(['name', 'users']);
+    expect(expression.arguments.map((argument) => expression.codeToken.sourceOf(argument))).toEqual(['name', 'users']);
     const edited = expression.withName('fetch').withArgumentSources(['id', 'accounts']);
-    expect(edited.stringify()).toBe('$:fetch id accounts');
-    expect(edited.code).toBeInstanceOf(CommandToken);
-    expect(edited.clone().code).not.toBe(edited.code);
-    expect(expression.stringify()).toBe('$:select name users');
+    expect(edited.raw()).toBe('$:fetch id accounts');
+    expect(edited.codeToken).toBeInstanceOf(CommandToken);
+    expect(edited.clone().code).not.toBe(edited.codeToken);
+    expect(expression.raw()).toBe('$:select name users');
   });
 
   it('exposes call operations only for prefixed calls', () => {

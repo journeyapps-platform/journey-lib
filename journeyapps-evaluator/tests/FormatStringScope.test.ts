@@ -60,7 +60,7 @@ describe('Evaluate', () => {
     expect(VariableFormatStringScope.getValuePromise(scope, 'false')).resolves.toEqual(false);
     expect(VariableFormatStringScope.getValuePromise(scope, 'true')).resolves.toEqual(true);
 
-    expect(evaluate('{null}', scope)).toBe('');
+    expect(evaluate('{null}', scope)).toBe('null');
     expect(evaluate('{false}', scope)).toBe('false');
     expect(evaluate('{true}', scope)).toBe('true');
   });

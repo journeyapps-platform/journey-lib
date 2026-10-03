@@ -5,10 +5,11 @@ import { ExpressionSource } from './tokens';
 /**
  * Try parsers in order and stop at the first matching expression.
  */
-export class CombinedParser<T extends AbstractExpression = AbstractExpression> implements ExpressionParser<T> {
+export class CombinedParser<T extends AbstractExpression = AbstractExpression> extends ExpressionParser<T> {
   readonly parsers: readonly ExpressionParser<T>[];
 
   constructor(parsers: readonly ExpressionParser<T>[]) {
+    super();
     this.parsers = Object.freeze([...parsers]);
   }
 
