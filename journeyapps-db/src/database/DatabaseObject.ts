@@ -4,7 +4,6 @@ import { ObjectDisplayScope } from './ObjectDisplayScope';
 import * as uuid from 'uuid';
 import { Query } from '../query/Query';
 import { RelationMatch } from '../query/queryOperations';
-import { GenericObject } from '../types/GenericObject';
 import { ObjectData } from '../types/ObjectData';
 import { SchemaModelType } from '@ja-platform/parser-schema';
 import * as j from '../utils/JourneyPromise';
@@ -562,7 +561,7 @@ export class DatabaseObject {
       }
 
       if (type.attributes[name]) {
-        return (objself as GenericObject)[name];
+        return (objself as Record<string, any>)[name];
       }
 
       if (type.belongsTo[name]) {
@@ -570,7 +569,7 @@ export class DatabaseObject {
       }
 
       if (type.hasMany[name]) {
-        return (objself as GenericObject)[name];
+        return (objself as Record<string, any>)[name];
       }
 
       return null;
@@ -583,13 +582,13 @@ export class DatabaseObject {
     // TODO: perhaps we should use a constant other than `undefined`?
     function _cached(name: string) {
       if (type.attributes[name]) {
-        return (objself as GenericObject)[name];
+        return (objself as Record<string, any>)[name];
       } else if (type.belongsTo[name]) {
         // Trigger a lookup (only has an effect if we haven't cached the relationship yet).
         triggerLoad(name);
         return belongsToCache[name];
       } else if (type.hasMany[name]) {
-        return (objself as GenericObject)[name];
+        return (objself as Record<string, any>)[name];
       } else {
         return null;
       }
@@ -604,7 +603,7 @@ export class DatabaseObject {
     // Set an attribute or relationship.
     function _set(name: string, value: any) {
       if (type.attributes[name]) {
-        (objself as GenericObject)[name] = value;
+        (objself as Record<string, any>)[name] = value;
       } else if (type.belongsTo[name]) {
         setBelongsTo(name, value);
       } else {

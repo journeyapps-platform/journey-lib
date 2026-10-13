@@ -4,7 +4,6 @@ import { Expression, TrueExpression, expressionFromHash, parse as parseQuery, An
 import { DatabaseObject } from '../database/DatabaseObject';
 import { Batch } from '../database/Batch';
 import { ObjectData } from '../types/ObjectData';
-import { GenericObject } from '../types/GenericObject';
 import { FormatStringExpression } from '@ja-platform/evaluator';
 import * as j from '../utils/JourneyPromise';
 import { SchemaModelType } from '@ja-platform/parser-schema';
@@ -495,7 +494,7 @@ async function preload<T extends DatabaseObject>(
     // Get ids of all the belongsTo objects in the relationship
     let ids = [];
     for (let object of objects) {
-      const id = (object as GenericObject)[key + '_id'];
+      const id = (object as Record<string, any>)[key + '_id'];
       ids.push(id);
     }
 

@@ -6,7 +6,6 @@ export * from './database/DatabaseObject';
 export * from './types/Location';
 export * from './query/Query';
 export * from './database/GenericDatabase';
-export * from './types/GenericObject';
 export * from './database/adapters/DatabaseAdapter';
 export * from './types/ObjectData';
 export * from './database/Database';

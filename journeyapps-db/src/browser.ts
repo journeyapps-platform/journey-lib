@@ -15,11 +15,8 @@ export * from './credentials/MobileCredentials';
 
 export * from './Schema';
 
-export * from './types/primitives';
-
 export { Type } from '@ja-platform/types';
 export * from './types/TypeOperations';
-export * from './types/GenericObject';
 export * from './types/ObjectData';
 export { SchemaModelType, SchemaModelTypeFactory } from '@ja-platform/parser-schema';
 export { ArrayType, QueryType } from '@ja-platform/types';
