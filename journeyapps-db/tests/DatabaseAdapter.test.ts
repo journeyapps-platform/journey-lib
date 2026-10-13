@@ -1,4 +1,4 @@
-import { ObjectType, Query, WebSQLAdapter } from '../src';
+import { SchemaModelType, Query, WebSQLAdapter } from '../src';
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as uuid from 'uuid';
 
@@ -135,7 +135,7 @@ describe('WebSQLAdapter', async () => {
       }
     ]);
 
-    const query = new Query(adapter, { name: 'asset' } as ObjectType);
+    const query = new Query(adapter, { name: 'asset' } as SchemaModelType);
 
     const results = await adapter.executeQuery(query);
 

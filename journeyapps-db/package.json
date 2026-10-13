@@ -26,9 +26,9 @@
     "@ja-platform/parser-schema": "workspace:*",
     "isomorphic-fetch": "^3.0.0",
     "lodash": "^4.17.21",
-    "moment": "^2.29.4",
     "uuid": "^9.0.0",
-    "xmldom": "^0.6.0"
+    "xmldom": "^0.6.0",
+    "@ja-platform/types": "workspace:*"
   },
   "files": [
     "dist"

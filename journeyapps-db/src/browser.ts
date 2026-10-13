@@ -17,12 +17,12 @@ export * from './Schema';
 
 export * from './types/primitives';
 
-export * from './types/Type';
+export { Type } from '@ja-platform/types';
+export * from './types/TypeOperations';
 export * from './types/GenericObject';
 export * from './types/ObjectData';
-export * from './types/ObjectType';
-export * from './types/ArrayType';
-export * from './types/QueryType';
+export { SchemaModelType, SchemaModelTypeFactory } from '@ja-platform/parser-schema';
+export { ArrayType, QueryType } from '@ja-platform/types';
 export * from './types/Location';
 export { Attachment } from './types/Attachment';
 
@@ -30,6 +30,7 @@ export * from './database/Batch';
 export * from './database/Database';
 export * from './database/Collection';
 export * from './database/DatabaseObject';
+export * from './database/ObjectDisplayScope';
 export * from './database/adapters/BaseAdapter';
 export * from './database/GenericDatabase';
 export * from './database/JourneyAPIAdapter';

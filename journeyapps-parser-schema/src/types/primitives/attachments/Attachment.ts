@@ -1,10 +1,10 @@
-import { TypeInterface } from '@ja-platform/evaluator';
-import { Type } from '../../Type';
+import { Type } from '@ja-platform/types';
 
 export class AttachmentType extends Type {
+  readonly _typeName = 'attachment';
   static readonly TYPE = 'attachment';
 
-  static isInstanceOf(type: TypeInterface): type is AttachmentType {
+  static isInstanceOf(type: Type): type is AttachmentType {
     return type.name === AttachmentType.TYPE;
   }
 

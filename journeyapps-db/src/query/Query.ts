@@ -1,3 +1,4 @@
+import { getPreloadRelationships, RelationshipHash } from './getPreloadRelationships';
 import { DatabaseAdapter } from '../database/adapters/DatabaseAdapter';
 import { Expression, TrueExpression, expressionFromHash, parse as parseQuery, AndExpression } from './queryOperations';
 import { DatabaseObject } from '../database/DatabaseObject';
@@ -6,18 +7,14 @@ import { ObjectData } from '../types/ObjectData';
 import { GenericObject } from '../types/GenericObject';
 import { FormatStringExpression } from '@ja-platform/evaluator';
 import * as j from '../utils/JourneyPromise';
-import { ObjectType } from '../types/ObjectType';
+import { SchemaModelType } from '@ja-platform/parser-schema';
 
 const cloneDeep = require('lodash/cloneDeep'); // tslint:disable-line
-
-interface RelationshipHash {
-  [key: string]: RelationshipHash;
-}
 
 export class Query<T extends DatabaseObject = DatabaseObject> {
   /** @internal */
   readonly adapter: DatabaseAdapter;
-  readonly type: ObjectType;
+  readonly type: SchemaModelType;
 
   /** @internal */
   expression: Expression;
@@ -49,7 +46,7 @@ export class Query<T extends DatabaseObject = DatabaseObject> {
     return false;
   }
 
-  constructor(adapter: DatabaseAdapter, type: ObjectType, expression?: Expression, ordering?: any[]) {
+  constructor(adapter: DatabaseAdapter, type: SchemaModelType, expression?: Expression, ordering?: any[]) {
     // type is the object type, not the query type
     if (adapter == null || type == null) {
       throw new Error('not enough arguments');
@@ -91,7 +88,7 @@ export class Query<T extends DatabaseObject = DatabaseObject> {
   }
 
   /** @internal */
-  _clone(newType?: ObjectType): Query<T> {
+  _clone(newType?: SchemaModelType): Query<T> {
     if (newType == null) {
       newType = this.type;
     }
@@ -458,37 +455,6 @@ function deepMerge(a: RelationshipHash, b: RelationshipHash): RelationshipHash {
   return a;
 }
 
-function getPreloadRelationships(
-  type: ObjectType,
-  columns?: FormatStringExpression[] | Record<string, FormatStringExpression>
-) {
-  // Not the most efficient function, but should be little overhead
-  // compared to querying the database.
-  let relationships: RelationshipHash = {};
-  if (columns == null) {
-    // object-list, use the default display format for the object
-    deepMerge(relationships, type.displayFormat.extractRelationshipStructure(type));
-  } else {
-    // object-table, use the specified column values
-    if (Array.isArray(columns)) {
-      for (let display of columns) {
-        if (display && typeof display.extractRelationshipStructure == 'function') {
-          deepMerge(relationships, display.extractRelationshipStructure(type));
-        }
-      }
-    } else {
-      for (let key in columns) {
-        const display = columns[key];
-        if (display && typeof display.extractRelationshipStructure == 'function') {
-          deepMerge(relationships, display.extractRelationshipStructure(type));
-        }
-      }
-    }
-  }
-
-  return relationships;
-}
-
 function normalizeInclude(into: RelationshipHash, expression: string) {
   const dot = expression.indexOf('.');
   if (dot < 0) {
@@ -513,7 +479,7 @@ function normalizeInclude(into: RelationshipHash, expression: string) {
 // relationships example: {'room' => {'building' => {}}, 'otherrel' => {}}
 async function preload<T extends DatabaseObject>(
   adapter: DatabaseAdapter,
-  type: ObjectType,
+  type: SchemaModelType,
   objects: T[],
   relationships: RelationshipHash
 ): Promise<T[]> {
@@ -521,7 +487,7 @@ async function preload<T extends DatabaseObject>(
 
   for (let key in relationships) {
     const relatedType = type.getAttribute(key).type;
-    if (!(relatedType instanceof ObjectType)) {
+    if (!(relatedType instanceof SchemaModelType)) {
       throw new Error(`${type.name}.${key} is not a belongs-to relationship`);
     }
     const nestedRelationships = relationships[key];

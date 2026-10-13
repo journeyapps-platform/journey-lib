@@ -33,6 +33,7 @@ describe('Expression validity', () => {
     expect(reversed.isValid()).toBe(false);
     const format = new FormatStringExpression({ tokens: [new PlaceholderToken(call)] });
     expect(format.isValid()).toBe(false);
+    // @ts-expect-error Exercise runtime validation of a token outside the format grammar.
     expect(new FormatStringExpression({ tokens: [new JSToken('save()')] }).isValid()).toBe(false);
     expect(new ShorthandExpression({ tokens: [new TextToken('user.name')] }).isValid()).toBe(false);
     expect(

@@ -1,8 +1,8 @@
 import { ExpressionParser } from '../../ExpressionParser';
-import { AbstractExpression, AbstractExpressionOptions } from '../AbstractExpression';
-import { AbstractToken, CodeToken, codeToken, ExpressionSource, JSToken } from '../../tokens';
-import { FormatStringScope } from '../../definitions/FormatStringScope';
-import { formatValueAsync } from '../../utils/formatStringUtils';
+import { AbstractExpression, AbstractExpressionOptions, ExpressionDiagnostic } from '../AbstractExpression';
+import { AbstractToken, CodeToken, codeToken, ExpressionSource, JSToken, ReferencePath } from '../../tokens';
+import type { ValidationContext } from '../../definitions/ValidationContext';
+import type { Type } from '@ja-platform/types';
 
 export interface ShorthandExpressionOptions extends AbstractExpressionOptions {
   format?: string;
@@ -11,11 +11,11 @@ export interface ShorthandExpressionOptions extends AbstractExpressionOptions {
 /**
  * A reference resolved through the scope without an evaluation prefix.
  * Examples include `user.name`, `items[0].name` and `user['name']`.
- * Bare arithmetic and root function calls are not shorthand references.
+ * Dynamic keys, call receivers, optional chains and arithmetic are not shorthand references.
  *
  * @example
  * ```ts
- * ShorthandExpression.parse('user.name').path; // 'user.name'
+ * ShorthandExpression.parse('user.name').path; // ['user', 'name']
  * ShorthandExpression.parse('items[0].name').raw(); // 'items[0].name'
  * ```
  */
@@ -42,16 +42,30 @@ export class ShorthandExpression<
 
   isValid(): boolean {
     const code = this.tokens.filter((token): token is CodeToken => token instanceof CodeToken);
-    return code.length === 1 && code[0].isReferenceExpression();
+    return code.length === 1 && code[0].referencePath() != null;
   }
 
-  get path(): string {
-    return this.codeToken.code;
+  get path(): ReferencePath {
+    const path = this.codeToken.referencePath();
+    if (path == null) throw new TypeError('Shorthand expressions require a static reference path.');
+    return path;
   }
 
-  async evaluatePromise(scope: FormatStringScope) {
-    const value = await scope.getValuePromise(this.path);
-    return formatValueAsync(value, scope.getExpressionType(this.path), this.format);
+  /**
+   * Resolve the referenced type without evaluating its value or retaining the result.
+   */
+  resolveType(context: ValidationContext): Type | null {
+    return context.getReference(this.path);
+  }
+
+  /**
+   * Report an unresolved reference using its original source token.
+   */
+  validate(context: ValidationContext): ExpressionDiagnostic[] {
+    if (this.resolveType(context) != null) {
+      return [];
+    }
+    return [{ token: this.codeToken, message: `'${this.codeToken.code}' is not defined` }];
   }
 }
 

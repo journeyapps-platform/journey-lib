@@ -1,4 +1,4 @@
-import { TextType } from '../src';
+import { textType } from '@ja-platform/types';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   EvaluatedExpressionParser,
@@ -85,7 +85,7 @@ describe('Expression parsing', () => {
   );
 
   it('distinguishes plain text from a format string without a global parsing mode', () => {
-    const text = ConstantExpression.parse('Hello {user.name}', TextType);
+    const text = ConstantExpression.parse('Hello {user.name}', textType);
     expect(text.value()).toBe('Hello {user.name}');
     expect(text.tokens).toHaveLength(1);
     expect(text.tokens[0]).toBeInstanceOf(TextToken);
@@ -108,7 +108,7 @@ describe('Expression parsing', () => {
   });
 
   it('exposes concrete return types at the static parsing entry points', () => {
-    expectTypeOf(ConstantExpression.parse('hello', TextType)).toEqualTypeOf<ConstantExpression>();
+    expectTypeOf(ConstantExpression.parse('hello', textType)).toEqualTypeOf<ConstantExpression>();
     expectTypeOf(EvaluatedExpression.parse('$:[]')).toEqualTypeOf<EvaluatedExpression>();
     expectTypeOf(EvaluatedExpression.parse('$:{}')).toEqualTypeOf<EvaluatedExpression>();
     expectTypeOf(FunctionExpression.parse('$:save()')).toEqualTypeOf<FunctionExpression>();

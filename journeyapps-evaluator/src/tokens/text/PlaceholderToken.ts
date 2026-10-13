@@ -4,8 +4,8 @@ import type { AbstractExpression } from '../../expressions/AbstractExpression';
 /**
  * A format-string delimiter pair containing one expression.
  */
-export class PlaceholderToken extends AbstractToken {
-  constructor(readonly expression: AbstractExpression, start = 0) {
+export class PlaceholderToken<T extends AbstractExpression = AbstractExpression> extends AbstractToken {
+  constructor(readonly expression: T, start = 0) {
     super(start);
     Object.freeze(this);
   }
@@ -18,7 +18,7 @@ export class PlaceholderToken extends AbstractToken {
     return `{${this.expression.raw()}}`;
   }
 
-  clone(): PlaceholderToken {
+  clone(): PlaceholderToken<T> {
     return new PlaceholderToken(this.expression.clone(), this.start);
   }
 }

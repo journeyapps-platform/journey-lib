@@ -1,9 +1,11 @@
-import { ValueSerializeOptions } from '@ja-platform/parser-schema';
+import { Type } from '@ja-platform/types';
+import { TypeOperations, ValueSerializeOptions } from '../../types/TypeOperations';
 import { Query } from '../../query/Query';
 import { ObjectData } from '../../types/ObjectData';
 import { ExecuteBatchOperation, ExecuteBatchResult } from '../Batch';
 
 export interface DatabaseAdapter {
+  operationsFor?(type: Type): TypeOperations;
   batchLimit: number;
   name: string;
 

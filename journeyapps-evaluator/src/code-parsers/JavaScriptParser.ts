@@ -1,10 +1,12 @@
 import { parseExpression, parse } from '@babel/parser';
-import { Expression, isExpressionStatement } from '@babel/types';
+import { Expression, isExpressionStatement, file, program, expressionStatement } from '@babel/types';
+import traverse from '@babel/traverse';
 import { CodeLanguageParser } from './CodeParser';
 
 export interface ParsedJavaScript {
   ast: Expression;
   code: string;
+  freeIdentifiers: readonly string[];
   hasTrailingLineComment: boolean;
   lexemes: readonly { start: number; end: number }[];
 }
@@ -39,8 +41,18 @@ export class JavaScriptParser implements CodeLanguageParser<ParsedJavaScript> {
         token.end > token.start &&
         source.slice(token.start, token.end) !== ';'
     );
+    // Discover bindings while parsing so CodeParser caches this alongside the tree.
+    const freeIdentifiers = new Set<string>();
+    traverse(file(program([expressionStatement(ast)])), {
+      ReferencedIdentifier(path) {
+        if (!path.scope.hasBinding(path.node.name, true)) {
+          freeIdentifiers.add(path.node.name);
+        }
+      }
+    });
     return {
       ast,
+      freeIdentifiers: [...freeIdentifiers],
       code: source.slice(tokens[0].start, tokens[tokens.length - 1].end),
       hasTrailingLineComment: comment?.type === 'CommentLine' && comment.end === source.length,
       lexemes: Object.freeze(tokens.map((token: any) => Object.freeze({ start: token.start, end: token.end })))

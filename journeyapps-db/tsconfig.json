@@ -11,8 +11,17 @@
     "./src/**/*.ts"
   ],
   "references": [
-    { "path": "../journeyapps-evaluator" },
-    { "path": "../journeyapps-core-date" },
-    { "path": "../journeyapps-parser-schema" }
+    {
+      "path": "../journeyapps-evaluator"
+    },
+    {
+      "path": "../journeyapps-core-date"
+    },
+    {
+      "path": "../journeyapps-parser-schema"
+    },
+    {
+      "path": "../journeyapps-types"
+    }
   ]
 }

@@ -3,26 +3,24 @@ import { FunctionType, FunctionTypeFactory } from '../types/FunctionType';
 import { Param, ParamFactory } from '../types/Param';
 import * as parser from './schemaParser';
 import { Variable, VariableFactory } from '../types/Variable';
-import { QueryType, QueryTypeFactory } from '../types/collections/QueryType';
-import { ArrayType, ArrayTypeFactory } from '../types/collections/ArrayType';
 import { Relationship, RelationshipTypeFactory } from '../types/Relationship';
-import { ObjectType, ObjectTypeFactory } from '../types/ObjectType';
-import { Type } from '../types/Type';
+import { SchemaModelType, SchemaModelTypeFactory } from '../types/SchemaModelType';
+import { Type } from '@ja-platform/types';
 import { ValidationError } from '@ja-platform/core-xml';
 import { XMLError, XMLElement } from '@journeyapps/domparser/types';
-import { TypeInterface } from '@ja-platform/evaluator';
 import { PrimitiveTypeMap, PrimitiveTypeName } from '../types/primitives';
 import { PrimitiveTypeFactory, TypeFactory } from './TypeFactory';
 
 export type InferGetType<
   T extends string | PrimitiveTypeName,
-  MAP extends { [key in PrimitiveTypeName]: typeof Type } = PrimitiveTypeMap
-> = T extends PrimitiveTypeName ? InstanceType<MAP[T]> : ObjectType;
+  MAP extends { [key in PrimitiveTypeName]: new (...args: any[]) => Type } = PrimitiveTypeMap,
+  Model extends SchemaModelType = SchemaModelType
+> = T extends PrimitiveTypeName ? InstanceType<MAP[T]> : Model;
 
 export class Schema {
   typeFactories: { [key: string]: TypeFactory } = {};
 
-  objects: { [index: string]: ObjectType };
+  objects: { [index: string]: SchemaModelType };
   errors: (ValidationError | XMLError)[];
 
   sourceElement: XMLElement;
@@ -39,9 +37,7 @@ export class Schema {
     this.registerTypeFactory(new VariableFactory());
     this.registerTypeFactory(new ParamFactory());
     this.registerTypeFactory(new FunctionTypeFactory());
-    this.registerTypeFactory(new ObjectTypeFactory());
-    this.registerTypeFactory(new ArrayTypeFactory());
-    this.registerTypeFactory(new QueryTypeFactory());
+    this.registerTypeFactory(new SchemaModelTypeFactory());
     this.registerTypeFactory(new RelationshipTypeFactory());
 
     // Register all the primitive types
@@ -59,44 +55,22 @@ export class Schema {
   }
 
   /** Helper function to assist in creating variables */
-  variable<T extends TypeInterface = Type>(name?: string, type?: string): Variable<T>;
-  variable<T extends TypeInterface = Type>(name?: string, type?: T): Variable<T>;
-  variable<T extends TypeInterface = Type>(name?: string, type?: T | string): Variable<T> {
+  variable<T extends Type = Type>(name?: string, type?: string): Variable<T>;
+  variable<T extends Type = Type>(name?: string, type?: T): Variable<T>;
+  variable<T extends Type = Type>(name?: string, type?: T | string): Variable<T> {
     const _type = typeof type === 'string' ? this.getType(type) : type;
     return this.getFactory(Variable.TYPE).generate<T>({ schema: this, name, type: _type });
   }
 
-  param<T extends TypeInterface = Type>(name?: string, type?: string): Param<T>;
-  param<T extends TypeInterface = Type>(name?: string, type?: T): Param<T>;
-  param<T extends TypeInterface = Type>(name?: string, type?: T | string): Param<T> {
+  param<T extends Type = Type>(name?: string, type?: string): Param<T>;
+  param<T extends Type = Type>(name?: string, type?: T): Param<T>;
+  param<T extends Type = Type>(name?: string, type?: T | string): Param<T> {
     const _type = typeof type === 'string' ? this.getType(type) : type;
     return this.getFactory(Param.TYPE).generate<T>({ schema: this, name, type: _type });
   }
 
-  /** Helper function to assist in creating query variables */
-  queryVariable(name: string, typeName: string) {
-    const objectType = this.getType(typeName);
-    const queryType = this.queryType(objectType);
-    return this.variable(name, queryType);
-  }
-
-  /** Helper function to assist in creating array variables */
-  arrayVariable(name: string, typeName: string) {
-    const objectType = this.getType(typeName);
-    const arrayType = this.arrayType(objectType);
-    return this.variable(name, arrayType);
-  }
-
-  queryType(objectType: ObjectType) {
-    return this.getFactory(QueryType.TYPE).generate({ schema: this, objectType }) as QueryType;
-  }
-
-  arrayType(objectType: ObjectType) {
-    return this.getFactory(ArrayType.TYPE).generate({ schema: this, objectType }) as ArrayType;
-  }
-
   newObjectType(name?: string) {
-    return this.getFactory(ObjectType.TYPE).generate({ schema: this, name }) as ObjectType;
+    return this.getFactory(SchemaModelType.TYPE).generate({ schema: this, name }) as SchemaModelType;
   }
 
   newRelationship() {

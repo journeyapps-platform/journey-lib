@@ -3,11 +3,11 @@ import { Query } from './Query';
 import { Expression } from './queryOperations';
 import { DatabaseObject } from '../database/DatabaseObject';
 import { ObjectData } from '../types/ObjectData';
-import { ObjectType } from '../types/ObjectType';
+import { SchemaModelType } from '@ja-platform/parser-schema';
 
 export interface InternalQuery<T extends DatabaseObject = DatabaseObject> extends Query<T> {
   readonly adapter: DatabaseAdapter;
-  readonly type: ObjectType;
+  readonly type: SchemaModelType;
 
   expression: Expression;
 

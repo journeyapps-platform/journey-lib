@@ -15,9 +15,12 @@
     "dist"
   ],
   "dependencies": {
+    "@ja-platform/core-date": "workspace:*",
+    "moment": "^2.29.4",
     "@ja-platform/core-xml": "workspace:*",
     "@ja-platform/evaluator": "workspace:*",
-    "@ja-platform/parser-common": "workspace:*"
+    "@ja-platform/parser-common": "workspace:*",
+    "@ja-platform/types": "workspace:*"
   },
   "devDependencies": {
     "@journeyapps/domparser": "^0.4.1",

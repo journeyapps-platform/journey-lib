@@ -20,6 +20,11 @@ export interface CodeReference {
 }
 
 /**
+ * Static reference segments, independent of the source language.
+ */
+export type ReferencePath = readonly [string, ...(string | number)[]];
+
+/**
  * Original source and executable code for a language-specific token.
  * Subclasses own their parser and syntax tree.
  * Argument describes that language's argument representation; consumers can use
@@ -37,6 +42,12 @@ export abstract class CodeToken<Argument = unknown> extends AbstractToken {
    * Executable source supplied to the evaluator, without surrounding source trivia.
    */
   abstract readonly code: string;
+
+  /**
+   * Free identifier names, including direct calls, in first-reference order.
+   * Local bindings and non-computed property names are excluded.
+   */
+  abstract readonly freeIdentifiers: readonly string[];
   /**
    * Arguments of the root call. Requires isCallExpression() to be true.
    */
@@ -63,6 +74,13 @@ export abstract class CodeToken<Argument = unknown> extends AbstractToken {
    * ```
    */
   abstract isReferenceExpression(): boolean;
+
+  /**
+   * Normalize a static reference. Dynamic keys and receivers are not paths.
+   */
+  referencePath(): ReferencePath | null {
+    return null;
+  }
 
   /**
    * Source of the root call's target. Requires isCallExpression() to be true.

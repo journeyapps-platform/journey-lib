@@ -1,7 +1,20 @@
 import { Version } from '@ja-platform/parser-common';
-import { describe, it, expect } from 'vitest';
+import { FunctionExpression, ShorthandExpression } from '@ja-platform/evaluator';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import * as blackmontapp_xml from '@ja-platform/core-xml';
-import { jsonParser, ObjectType, parseJsonField, parser2, parser3, Schema, TextType } from '../src';
+import {
+  jsonParser,
+  SchemaModelType,
+  Param,
+  parseJsonField,
+  parseJsonVariable,
+  parser2,
+  parser3,
+  Schema,
+  SchemaObjectDisplayExpression,
+  TextType
+} from '../src';
+import { ObjectType, Type as ValueType } from '@ja-platform/types';
 
 // @ts-ignore
 import schema2_xml from './fixtures/schema2.xml?raw';
@@ -12,6 +25,34 @@ import schema3BadgeCountXml from './fixtures/schema3-badge-count.xml?raw';
 
 const v3 = new Version('3.1');
 const v2 = new Version('2.0');
+
+describe('schema object display', () => {
+  it('retains typed shorthand parameters and renders supplied values', () => {
+    const expression = SchemaObjectDisplayExpression.parse('Price: {price:.2f}');
+    expectTypeOf(expression.parameters).toEqualTypeOf<readonly ShorthandExpression[]>();
+    expect(expression.parameters[0].format).toBe('.2f');
+    expect(expression.render(['12.50'])).toBe('Price: 12.50');
+  });
+
+  it('rejects evaluated and constant placeholders in schema displays and replacements', () => {
+    for (const display of ['{$:Math.floor(thing)}', '{42}']) {
+      expect(() =>
+        new Schema().loadXml(
+          `<data-model><model name="item" label="Item"><display>${display}</display></model></data-model>`,
+          { apiVersion: v3 }
+        )
+      ).toThrow(SyntaxError);
+      expect(() =>
+        jsonParser(new Schema()).parse({
+          objects: { item: { label: 'Item', display, attributes: {} } }
+        })
+      ).toThrow(SyntaxError);
+    }
+    const expression = SchemaObjectDisplayExpression.parse('{name}');
+    // @ts-expect-error Exercise runtime rejection of a placeholder outside the schema grammar.
+    expect(() => expression.withParameters([FunctionExpression.parse('$:load()')])).toThrow(SyntaxError);
+  });
+});
 
 describe('json parsing', () => {
   const schema = new Schema();
@@ -56,6 +97,11 @@ describe('json parsing', () => {
     const asset = schema.objects.asset;
     const room = schema.objects.room;
 
+    expect(asset).toBeInstanceOf(ObjectType);
+    expect(asset).toBeInstanceOf(ValueType);
+    expect(asset.getField('serial')).toBe(asset.attributes.serial.type);
+    expect(asset.getField('container')).toBe(room);
+    expect(asset.getField('__proto__')).toBeNull();
     expect(asset.label).toBe('Asset');
     expect(asset.attributes.serial.type.spec).toBe('number');
     expect(asset.attributes.colours.type.options[3].label).toBe('Green');
@@ -132,6 +178,23 @@ describe('xml schema parsing (domparser)', () => {
   function xml(text: string) {
     return blackmontapp_xml.parse(text).documentElement;
   }
+
+  it.each(['convert($event.value)', 'convert'])('keeps parameter provider %s parsed across serialization', (source) => {
+    const schema = new Schema();
+    const param = parser3(schema).parseField(
+      xml(`<param name="input" type="text" transform-value="$:${source}" />`)
+    ) as Param;
+    const expectedCode = source === 'convert' ? 'convert()' : source;
+    expect(param.provideValue).toBeInstanceOf(FunctionExpression);
+    expect(param.provideValue.code()).toBe(expectedCode);
+
+    // The wire format stays a string; the receiver restores the parsed expression.
+    const serialized = param.toJSON();
+    expect(serialized.provideValue).toBe(`$:${expectedCode}`);
+    const restored = parseJsonVariable(schema, param.name, serialized) as Param;
+    expect(restored.provideValue).toBeInstanceOf(FunctionExpression);
+    expect(restored.provideValue.code()).toBe(expectedCode);
+  });
 
   it('should load a v2 string attribute', () => {
     const attr = parser2(new Schema()).parseField(
@@ -340,7 +403,7 @@ describe('xml schema parsing (domparser)', () => {
     expect(assetType.name).toBe('asset');
     expect(assetType.label).toBe('Asset');
 
-    const serial = assetType.getVariable('serial_number');
+    const serial = assetType.getAttribute('serial_number');
     expect(serial).not.toEqual(null);
     expect(serial.name).toEqual('serial_number');
     expect(serial.label).toEqual('Serial Number');
@@ -401,7 +464,7 @@ describe('xml schema parsing (domparser)', () => {
       const assetsAttr = roomType.getAttribute('assets');
       expect(assetsAttr.name).toBe('assets');
       expect(assetsAttr.type.name).toBe('query');
-      expect(assetsAttr.type.objectType.name).toBe('asset');
+      expect(assetsAttr.type.itemType.name).toBe('asset');
 
       const photoAttr = assetType.getAttribute('photo');
       expect(photoAttr.type.media).toBe('image/jpeg');
@@ -444,10 +507,13 @@ describe('xml schema parsing (domparser)', () => {
     expect(notification).not.toEqual(null); // sanity check
     expect(notification.notifyUsers).not.toEqual(null);
     expect(notification.notifyUsers.length).toEqual(1);
-    expect(notification.notifyUsers[0].message).not.toEqual(null);
+    expect(notification.notifyUsers[0].message).toBeInstanceOf(SchemaObjectDisplayExpression);
     expect(notification.notifyUsers[0].received).toEqual('received_at');
     expect(notification.notifyUsers[0].recipient).toEqual('worker');
     expect(notification.notifyUsers[0].badgeCount).toEqual(null);
+
+    const executableMessage = schema3_xml.replace('message="{message}"', 'message="{$:loadMessage()}"');
+    expect(() => new Schema().loadXml(executableMessage, { apiVersion: v3 })).toThrow(SyntaxError);
   });
 
   it('should a notify-user definition for a model with badge count', () => {
@@ -455,10 +521,10 @@ describe('xml schema parsing (domparser)', () => {
 
     expect(s.errors).toEqual([]);
 
-    const workerType = s.getType('worker') as ObjectType;
+    const workerType = s.getType('worker') as SchemaModelType;
     expect(workerType).not.toEqual(null); // sanity check
 
-    const notification = s.getType('order_notification') as ObjectType;
+    const notification = s.getType('order_notification') as SchemaModelType;
     expect(notification).not.toEqual(null); // sanity check
     expect(notification.notifyUsers).not.toEqual(null);
     expect(notification.notifyUsers.length).toEqual(1);
@@ -473,7 +539,7 @@ describe('xml schema parsing (domparser)', () => {
 
     expect(s.errors).toEqual([]);
 
-    const assetType = s.getType('asset') as ObjectType;
+    const assetType = s.getType('asset') as SchemaModelType;
     expect(assetType).not.toEqual(null); // sanity check
 
     expect(assetType.webhooks).not.toEqual(null);
@@ -522,7 +588,7 @@ describe('xml schema parsing (domparser)', () => {
 
     expect(s.errors).toEqual([]);
 
-    const roomType = s.getType('room') as ObjectType;
+    const roomType = s.getType('room') as SchemaModelType;
     expect(roomType).not.toEqual(null); // sanity check
 
     expect(roomType.webhooks).not.toEqual(null);
@@ -541,7 +607,7 @@ describe('xml schema parsing (domparser)', () => {
     const s = new Schema().loadXml(schema3_xml, { apiVersion: v3 });
     expect(s.errors).toEqual([]);
 
-    const part = s.getType('part') as ObjectType;
+    const part = s.getType('part') as SchemaModelType;
     expect(part).not.toEqual(null); // sanity check
 
     expect(part.webhooks).not.toEqual(null);
@@ -572,7 +638,7 @@ describe('xml schema parsing (domparser)', () => {
 
       return {
         schema: s,
-        hook: (s.getType('worker') as ObjectType).webhooks[0],
+        hook: (s.getType('worker') as SchemaModelType).webhooks[0],
         errors: s.errors.map((e) => e.message)
       };
     }

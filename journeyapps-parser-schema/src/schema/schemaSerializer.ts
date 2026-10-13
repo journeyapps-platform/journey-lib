@@ -3,6 +3,7 @@ import { setAttributes, OrderedIncrementalUpdater } from '@ja-platform/core-xml'
 import { XMLElement, XMLDocument } from '@journeyapps/domparser/types';
 import * as xml from '@ja-platform/core-xml';
 import { Variable } from '../types/Variable';
+import { AttachmentType, ChoiceType } from '../types/primitives';
 
 export function toDOM(schema: Schema): XMLDocument {
   let doc = xml.createDocument('data-model');
@@ -31,7 +32,8 @@ export function toDOM(schema: Schema): XMLDocument {
               name: attribute.name,
               label: attribute.label,
               type: attribute.sourceTypeName || attribute.type.stringify(),
-              'auto-download': attribute.type.autoDownload ? 'true' : null
+              'auto-download':
+                AttachmentType.isInstanceOf(attribute.type) && attribute.type.autoDownload ? 'true' : null
             });
 
             // single-choice, single-choice-integer and boolean fields all may contain <option> children.
@@ -81,7 +83,7 @@ export function toDOM(schema: Schema): XMLDocument {
       diff.append(model.displaySource, {
         tagName: 'display',
         update(displayElement) {
-          displayElement.textContent = model.displayFormat.expression;
+          displayElement.textContent = model.displayFormat?.raw() ?? '';
         },
         cloneDeep: true
       });
@@ -106,10 +108,10 @@ export function toDOM(schema: Schema): XMLDocument {
  * No-op for other fields.
  */
 export function updateOptions(fieldDiff: OrderedIncrementalUpdater, attribute: Variable) {
-  const options = attribute.type.options;
-  if (options == null) {
+  if (!ChoiceType.isInstanceOf(attribute.type)) {
     return;
   }
+  const options = attribute.type.options;
   const keys = Object.keys(options);
 
   // Special case for default boolean options, which doesn't have to be specified explicitly.

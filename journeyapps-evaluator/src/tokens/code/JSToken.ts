@@ -8,7 +8,7 @@ import {
   program,
   expressionStatement
 } from '@babel/types';
-import { CodeToken, CodeReference } from './CodeToken';
+import { CodeToken, CodeReference, ReferencePath } from './CodeToken';
 import { AbstractToken } from '../AbstractToken';
 import { TextToken } from '../text/TextToken';
 import { CodeParser } from '../../code-parsers/CodeParser';
@@ -22,6 +22,7 @@ export class JSToken extends CodeToken<CallExpression['arguments'][number]> {
   private static readonly parser = new JavaScriptParser();
   readonly ast: Expression;
   readonly code: string;
+  readonly freeIdentifiers: readonly string[];
   readonly hasTrailingLineComment: boolean;
   private readonly lexemes: readonly { start: number; end: number }[];
 
@@ -30,6 +31,7 @@ export class JSToken extends CodeToken<CallExpression['arguments'][number]> {
     const parsed = CodeParser.getInstance().parse(source, JSToken.parser);
     this.ast = parsed.ast;
     this.code = parsed.code;
+    this.freeIdentifiers = Object.freeze(parsed.freeIdentifiers);
     this.hasTrailingLineComment = parsed.hasTrailingLineComment;
     this.lexemes = parsed.lexemes;
     Object.freeze(this);
@@ -49,6 +51,35 @@ export class JSToken extends CodeToken<CallExpression['arguments'][number]> {
 
   isReferenceExpression(): boolean {
     return ['Identifier', 'MemberExpression', 'OptionalMemberExpression'].includes(this.ast.type);
+  }
+
+  referencePath(): ReferencePath | null {
+    const normalize = (node: Node): ReferencePath | null => {
+      if (node.type === 'Identifier') return [node.name];
+      if (node.type !== 'MemberExpression') return null;
+      const parent = normalize(node.object);
+      if (parent == null) return null;
+      const key = node.property;
+      if (!node.computed && key.type === 'Identifier') return [...parent, key.name];
+      if (
+        node.computed &&
+        (key.type === 'StringLiteral' || (key.type === 'NumericLiteral' && Number.isFinite(key.value)))
+      ) {
+        return [...parent, key.value];
+      }
+      if (
+        node.computed &&
+        key.type === 'UnaryExpression' &&
+        key.operator === '-' &&
+        key.argument.type === 'NumericLiteral' &&
+        Number.isFinite(key.argument.value)
+      ) {
+        return [...parent, -key.argument.value];
+      }
+      return null;
+    };
+    const path = normalize(this.ast);
+    return path == null ? null : Object.freeze(path);
   }
 
   withName(name: string): JSToken {

@@ -1,5 +1,10 @@
-import { FormatStringScope } from '../definitions/FormatStringScope';
 import { AbstractToken } from '../tokens';
+import type { ValidationContext } from '../definitions/ValidationContext';
+
+export interface ExpressionDiagnostic {
+  token: AbstractToken;
+  message: string;
+}
 
 export interface AbstractExpressionOptions {
   start?: number;
@@ -14,9 +19,9 @@ export interface AbstractExpressionOptions {
  * Shared source tokens and positions for concrete expression types.
  * Concrete types represent constant text such as `42`, references such as `user.name`,
  * evaluated code such as `$:count + 1`, or format strings such as `Hello {user.name}`.
- * raw() reproduces source syntax; evaluatePromise() resolves the expression through a scope.
+ * raw() reproduces source syntax.
  */
-export abstract class AbstractExpression<O extends AbstractExpressionOptions = AbstractExpressionOptions, V = any> {
+export abstract class AbstractExpression<O extends AbstractExpressionOptions = AbstractExpressionOptions> {
   type: string;
   options: O;
 
@@ -34,7 +39,12 @@ export abstract class AbstractExpression<O extends AbstractExpressionOptions = A
    */
   abstract isValid(): boolean;
 
-  abstract evaluatePromise(scope: FormatStringScope): Promise<V>;
+  /**
+   * Validate references against declarations without evaluating values.
+   */
+  validate(_context: ValidationContext): ExpressionDiagnostic[] {
+    return [];
+  }
 
   clone(): this {
     const Type = this.constructor as new (options: O) => this;

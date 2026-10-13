@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AbstractToken, JSToken, PrefixToken, PlaceholderToken, TextToken, FunctionExpression } from '../src';
+import {
+  AbstractToken,
+  JSToken,
+  PrefixToken,
+  PlaceholderToken,
+  TextToken,
+  FunctionExpression,
+  IdentifierToken
+} from '../src';
 
 class ContainerToken extends AbstractToken {
   constructor(readonly tokens: readonly AbstractToken[]) {
@@ -14,6 +22,29 @@ class ContainerToken extends AbstractToken {
 }
 
 describe('Source token trees', () => {
+  it.each([
+    ['$:', true],
+    ['query:', true],
+    ['query', false],
+    [':', false]
+  ])('validates prefix syntax: %s', (source, valid) => {
+    expect(new PrefixToken(0, source).isValid()).toBe(valid);
+  });
+
+  it.each([
+    ['push_notification', true],
+    ['$object', true],
+    ['push-notification', false],
+    ['2items', false]
+  ])('validates identifier syntax: %s', (source, valid) => {
+    expect(new IdentifierToken(source).isValid()).toBe(valid);
+  });
+
+  it('does not accept declaration prefixes as JavaScript evaluation prefixes', () => {
+    const expression = new FunctionExpression({ tokens: [new PrefixToken(0, 'query:'), new JSToken('load()', 6)] });
+    expect(expression.isValid()).toBe(false);
+  });
+
   it('assembles containers recursively and exposes source offsets', () => {
     const expression = FunctionExpression.parse([new PrefixToken(20), new JSToken('save(true)', 22)]);
     const placeholder = new PlaceholderToken(expression, 19);
@@ -44,5 +75,21 @@ describe('Source token trees', () => {
   it('encodes constructed literal text for its destination syntax', () => {
     expect(TextToken.fromValue('{name}').raw()).toBe('{{name}}');
     expect(new TextToken('{{name}}').decodedText).toBe('{name}');
+  });
+});
+
+describe('JavaScript free identifiers', () => {
+  it('includes nested calls and computed keys without including local bindings or property names', () => {
+    const token = new JSToken('format(load(item), rows.map(row => row[field] + item.price), Math.round(view.amount))');
+    expect(token.freeIdentifiers).toEqual(['format', 'load', 'item', 'rows', 'field', 'Math', 'view']);
+    expect(token.clone().freeIdentifiers).toEqual(token.freeIdentifiers);
+    expect(Object.isFrozen(token.freeIdentifiers)).toBe(true);
+  });
+
+  it('respects destructuring, shorthand properties, and bindings used before their declarations', () => {
+    const token = new JSToken(
+      '(function ({ value = fallback }) { return { value, outer, result: local() }; function local() { return extra; } })(input)'
+    );
+    expect(token.freeIdentifiers).toEqual(['fallback', 'outer', 'extra', 'input']);
   });
 });

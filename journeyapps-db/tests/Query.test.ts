@@ -1,11 +1,11 @@
 import { Day } from '@ja-platform/core-date';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DBSchema as Schema, query, Type, Variable } from '../src';
+import { DBSchema as Schema, query, SchemaModelType, Variable } from '../src';
 
 declare module 'vitest' {
   export interface TestContext {
     schema: Schema;
-    scope: Type;
+    scope: SchemaModelType;
     variables: {
       color: Variable;
       colors: Variable;
@@ -33,7 +33,7 @@ const peterId = 'b0b278a4-beea-11e3-b97a-e0db55d54387';
 describe('Queries', () => {
   beforeEach((context) => {
     const schema = new Schema();
-    const scope = new Type(null);
+    const scope = new SchemaModelType(null);
 
     scope.name = 'TestScope';
     scope.addAttribute(schema.variable('id', schema.primitive('text')));
@@ -75,7 +75,7 @@ describe('Queries', () => {
   });
 
   describe('Expression parsing', () => {
-    function assertParses(scope: Type, expression: string, result: any) {
+    function assertParses(scope: SchemaModelType, expression: string, result: any) {
       if (typeof result == 'string') {
         expect(query.parse(scope, expression, ['?', '?', '?']).toString()).toBe(result);
       } else {
@@ -83,7 +83,7 @@ describe('Queries', () => {
       }
     }
 
-    function assertInvalid(scope: Type, expression: string, position: number) {
+    function assertInvalid(scope: SchemaModelType, expression: string, position: number) {
       try {
         query.parse(scope, expression, ['?', '?', '?']);
         expect('Should have thrown an error').toBe(true as any); // HACK
@@ -214,7 +214,7 @@ describe('Queries', () => {
 
   describe('toOriginalExpression', () => {
     // This is relevant only for the Backend JS Console
-    function assertOriginalExpression(scope: Type, expression: string, result: any[]) {
+    function assertOriginalExpression(scope: SchemaModelType, expression: string, result: any[]) {
       expect(query.parse(scope, expression, ['1', '2', '3']).toOriginalExpression()).toEqual(result);
     }
 
@@ -301,7 +301,7 @@ describe('Queries', () => {
   });
 
   describe('Normalize', () => {
-    function assertNormalized(scope: Type, expression: any, normalized: string) {
+    function assertNormalized(scope: SchemaModelType, expression: any, normalized: string) {
       if (typeof expression == 'string') {
         expression = query.parse(scope, expression, ['?', '?', '?', '?']);
       }

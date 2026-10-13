@@ -14,7 +14,7 @@ export interface FormatShorthandExpressionOptions extends ShorthandExpressionOpt
  * @example
  * ```ts
  * const expression = FormatShorthandExpression.parse('price:.2f');
- * expression.path; // 'price'
+ * expression.path; // ['price']
  * expression.format; // '.2f'
  * expression.raw(); // 'price:.2f'
  * ```

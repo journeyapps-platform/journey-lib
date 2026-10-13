@@ -1,18 +1,14 @@
-import { TypeInterface } from '@ja-platform/evaluator';
-import { Type } from '../Type';
+import { Type, TextType as ValueTextType } from '@ja-platform/types';
 
-export class TextType extends Type {
+export class TextType extends ValueTextType {
   static readonly TYPE = 'text';
 
-  static isInstanceOf(type: TypeInterface): type is TextType {
-    return type.name === TextType.TYPE;
+  static isInstanceOf(type: Type): type is TextType {
+    return type?._typeName === TextType.TYPE;
   }
 
   spec?: string;
-
-  constructor() {
-    super(TextType.TYPE, true);
-  }
+  subType?: string;
 
   toJSON() {
     const json = {} as any;

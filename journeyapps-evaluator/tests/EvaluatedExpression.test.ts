@@ -103,7 +103,7 @@ describe('EvaluatedExpression', () => {
     expect(constant.value()).toBe(source);
   });
 
-  it('accepts another language without inspecting a Babel node', async () => {
+  it('accepts another language without inspecting a Babel node', () => {
     const token = new QueryToken('  select name from users  ', 12);
     const expression = EvaluatedExpression.parse([new PrefixToken(10), token]);
     expect(expression.codeToken).toBe(token);
@@ -111,16 +111,6 @@ describe('EvaluatedExpression', () => {
     expect(expression.raw()).toBe(`$:${token.source}`);
     expect(expression.code()).toBe('select name from users');
     expect(expression.clone().codeToken).toBeInstanceOf(QueryToken);
-    let evaluated: string;
-    expect(
-      await expression.evaluatePromise({
-        evaluateFunctionExpression: async (source) => {
-          evaluated = source;
-          return 'result';
-        }
-      } as any)
-    ).toBe('result');
-    expect(evaluated).toBe('select name from users');
     const updated = expression.withCode(new QueryToken('select id from users'));
     expect(updated.raw()).toBe('$:select id from users');
     expect(expression.raw()).toBe(`$:${token.source}`);

@@ -1,10 +1,12 @@
-import { VariableFormatStringScope } from '@ja-platform/evaluator';
+import { operationsFor as databaseOperationsFor } from '../types/TypeOperations';
+import { formatValueAsync } from '@ja-platform/evaluator';
+import { ObjectDisplayScope } from './ObjectDisplayScope';
 import * as uuid from 'uuid';
 import { Query } from '../query/Query';
 import { RelationMatch } from '../query/queryOperations';
 import { GenericObject } from '../types/GenericObject';
 import { ObjectData } from '../types/ObjectData';
-import { ObjectType } from '../types/ObjectType';
+import { SchemaModelType } from '@ja-platform/parser-schema';
 import * as j from '../utils/JourneyPromise';
 import { DatabaseAdapter } from './adapters/DatabaseAdapter';
 import { Batch, CrudError } from './Batch';
@@ -13,7 +15,7 @@ import { Batch, CrudError } from './Batch';
 export class DatabaseObject {
   // id is optional. If not specified, a new one will be assigned automatically.
   /** @internal */
-  static build<T = {}>(adapter: DatabaseAdapter, type: ObjectType, id?: string, data?: any): DatabaseObject & T {
+  static build<T = {}>(adapter: DatabaseAdapter, type: SchemaModelType, id?: string, data?: any): DatabaseObject & T {
     var obj = new DatabaseObject(adapter, type, id);
     if (data != null) {
       obj.resolve(data);
@@ -25,7 +27,7 @@ export class DatabaseObject {
    * ID of the object, generated when the object is first created.
    */
   readonly id: string;
-  readonly type: ObjectType;
+  readonly type: SchemaModelType;
   /** @internal */
   _adapter: DatabaseAdapter; // tslint:disable-line
 
@@ -35,6 +37,18 @@ export class DatabaseObject {
   persisted: boolean;
 
   // functions set in the constructor
+  /**
+   * Read a field or resolve a relationship.
+   */
+  _get: (name: string) => Promise<any>;
+  /**
+   * Read a field or cached relationship, returning undefined while it loads.
+   */
+  _cached: (name: string) => any;
+  /**
+   * Set a declared field or belongs-to relationship.
+   */
+  _set: (name: string, value: any) => void;
   /** @internal */
   resolve: (data: ObjectData) => void;
 
@@ -60,7 +74,7 @@ export class DatabaseObject {
   /** @internal */
   _destroyed: () => boolean; // tslint:disable-line
 
-  constructor(adapter: DatabaseAdapter, type: ObjectType, id: string) {
+  constructor(adapter: DatabaseAdapter, type: SchemaModelType, id: string) {
     if (adapter == null || typeof adapter.get != 'function') {
       throw new Error('adapter is required');
     }
@@ -68,6 +82,7 @@ export class DatabaseObject {
       throw new Error('type is required');
     }
     const objself = this;
+    const operationsFor = adapter.operationsFor?.bind(adapter) ?? databaseOperationsFor;
 
     // This is where all the attributes are stored
     const attributes: { [index: string]: any } = {};
@@ -149,7 +164,7 @@ export class DatabaseObject {
 
           // We don't override any attributes that have already been set.
           if (!attributesDirty[key]) {
-            const realValue = value == null ? null : attribute.type.valueFromJSON(value);
+            const realValue = value == null ? null : operationsFor(attribute.type).valueFromJSON(value);
 
             // We use the setter so that type checking occurs...
             try {
@@ -304,7 +319,7 @@ export class DatabaseObject {
     // Only returns the correct value if the object is already loaded.
     function toString() {
       var displayFormat = type.displayFormat;
-      return displayFormat.evaluate(new VariableFormatStringScope(objself));
+      return new ObjectDisplayScope(objself, operationsFor).evaluate(displayFormat);
     }
 
     function toData(patch?: boolean) {
@@ -333,12 +348,12 @@ export class DatabaseObject {
             if (value == null) {
               jsonAttributes[name] = null;
             } else {
-              jsonAttributes[name] = attribute.type.valueToJSON(value, adapter.serializeOptions);
+              jsonAttributes[name] = operationsFor(attribute.type).valueToJSON(value, adapter.serializeOptions);
             }
           }
         } else {
           if (value != null) {
-            jsonAttributes[name] = attribute.type.valueToJSON(value, adapter.serializeOptions);
+            jsonAttributes[name] = operationsFor(attribute.type).valueToJSON(value, adapter.serializeOptions);
           }
         }
       });
@@ -364,7 +379,7 @@ export class DatabaseObject {
         // Includes undefined.
         value = null;
       } else {
-        value = attribute.type.cast(value);
+        value = operationsFor(attribute.type).parse(value);
       }
 
       // We specifically don't want to set the value to null if the object is not loaded yet.
@@ -599,7 +614,7 @@ export class DatabaseObject {
       }
     }
 
-    function _clone(newType: ObjectType) {
+    function _clone(newType: SchemaModelType) {
       if (newType == null) {
         newType = type;
       }
@@ -612,9 +627,17 @@ export class DatabaseObject {
       return clone;
     }
 
-    function _display() {
-      const displayFormat = type.displayFormat;
-      return displayFormat.evaluatePromise(new VariableFormatStringScope(objself));
+    async function _display(): Promise<string> {
+      const expression = type.displayFormat;
+      const scope = new ObjectDisplayScope(objself, operationsFor);
+      const values = await Promise.all(
+        expression.parameters.map(async (parameter) => {
+          const value = await scope.getValuePromise(parameter.path);
+          const formatter = scope.getExpressionFormatter(parameter.path);
+          return formatValueAsync(value, formatter, parameter.format);
+        })
+      );
+      return expression.render(values);
     }
 
     // public functions, but not enumerable

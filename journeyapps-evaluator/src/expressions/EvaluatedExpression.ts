@@ -12,7 +12,6 @@ import {
   hasFunctionPrefix,
   leadingTrivia
 } from '../tokens';
-import { FormatStringScope } from '../definitions/FormatStringScope';
 
 /**
  * Code explicitly marked for evaluation by the `$:` prefix.
@@ -41,7 +40,10 @@ export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOp
     const prefixes = this.tokens.filter((token) => token instanceof PrefixToken);
     const code = this.tokens.filter((token) => token instanceof CodeToken);
     return (
-      prefixes.length === 1 && code.length === 1 && this.tokens.indexOf(prefixes[0]) < this.tokens.indexOf(code[0])
+      prefixes.length === 1 &&
+      prefixes[0].raw() === FUNCTION_PREFIX &&
+      code.length === 1 &&
+      this.tokens.indexOf(prefixes[0]) < this.tokens.indexOf(code[0])
     );
   }
 
@@ -69,10 +71,6 @@ export class EvaluatedExpression extends AbstractExpression<AbstractExpressionOp
    */
   code(): string {
     return this.codeToken.code;
-  }
-
-  async evaluatePromise(scope: FormatStringScope) {
-    return scope.evaluateFunctionExpression(this.code());
   }
 }
 

@@ -1,4 +1,4 @@
-import { TextType } from '../src';
+import { textType } from '@ja-platform/types';
 import { describe, expect, it } from 'vitest';
 import {
   ExpressionParser,
@@ -21,14 +21,15 @@ import {
 } from '../src';
 
 describe('Expression parser composition', () => {
-  it('combines evaluated syntax with literal text without inferring the target value type', async () => {
+  it('combines evaluated syntax with literal text without inferring the target value type', () => {
     const parser = new CombinedParser<EvaluatedExpression | ConstantExpression>([
       new FunctionExpressionParser(),
       new EvaluatedExpressionParser(),
       new ConstantExpressionParser()
     ]);
     const literal = parser.tryParse('1e3');
-    expect(await literal.evaluatePromise(null)).toBe('1e3');
+    expect(literal).toBeInstanceOf(ConstantExpression);
+    expect((literal as ConstantExpression).value()).toBe('1e3');
     expect(parser.tryParse('$:count()')).toBeInstanceOf(FunctionExpression);
     expect(parser.tryParse('$:count + 1')).toBeInstanceOf(EvaluatedExpression);
     expect(() => parser.tryParse('$:broken(')).toThrow(SyntaxError);
@@ -44,16 +45,13 @@ describe('Expression parser composition', () => {
     }
   );
 
-  it.each(['user.name', 'user[field]', "user['name'].length", 'shared.func().something', 'user?.name'])(
-    'keeps reference structure in Babel: %s',
-    (source) => {
-      const expression = parseExpression(source) as ShorthandExpression;
-      expect(expression).toBeInstanceOf(ShorthandExpression);
-      expect(expression.tokens).toHaveLength(1);
-      expect((expression.codeToken as JSToken).ast.type).toMatch(/MemberExpression/);
-      expect(expression.raw()).toBe(source);
-    }
-  );
+  it.each(['user.name', 'user[0]', "user['name'].length"])('keeps reference structure in Babel: %s', (source) => {
+    const expression = parseExpression(source) as ShorthandExpression;
+    expect(expression).toBeInstanceOf(ShorthandExpression);
+    expect(expression.tokens).toHaveLength(1);
+    expect((expression.codeToken as JSToken).ast.type).toMatch(/MemberExpression/);
+    expect(expression.raw()).toBe(source);
+  });
 
   it.each(['$:foo()', '$:myVar', '$:journey.version', "$:user['name'].length"])(
     'recognizes prefixed expressions without changing source: %s',
@@ -129,7 +127,7 @@ describe('Expression parser composition', () => {
       new (class extends ExpressionParser<ConstantExpression> {
         tryParse(source: ExpressionSource) {
           visited.push('second');
-          return ConstantExpression.parse(source, TextType);
+          return ConstantExpression.parse(source, textType);
         }
       })(),
       new (class extends ExpressionParser<ConstantExpression> {

@@ -1,13 +1,12 @@
-import { TypeInterface } from '@ja-platform/evaluator';
 import { AbstractObjectTypeFactory } from '../schema/TypeFactory';
-import { Type } from './Type';
+import { Type } from '@ja-platform/types';
 import { Variable } from './Variable';
 
 export class FunctionType extends Type {
   static readonly TYPE = 'function';
   static readonly ARG_TAG = 'arg';
 
-  static isInstanceOf(type: TypeInterface): type is FunctionType {
+  static isInstanceOf(type: Type): type is FunctionType {
     return type.name === FunctionType.TYPE;
   }
   arguments: Variable[];

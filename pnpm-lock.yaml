@@ -84,15 +84,15 @@ importers:
       '@ja-platform/parser-schema':
         specifier: workspace:*
         version: link:../journeyapps-parser-schema
+      '@ja-platform/types':
+        specifier: workspace:*
+        version: link:../journeyapps-types
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0(encoding@0.1.13)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      moment:
-        specifier: ^2.29.4
-        version: 2.30.1
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
@@ -127,6 +127,9 @@ importers:
       '@ja-platform/core-xml':
         specifier: workspace:*
         version: link:../journeyapps-core-xml
+      '@ja-platform/types':
+        specifier: workspace:*
+        version: link:../journeyapps-types
     devDependencies:
       '@types/babel__traverse':
         specifier: ^7.20.5
@@ -153,6 +156,9 @@ importers:
 
   journeyapps-parser-schema:
     dependencies:
+      '@ja-platform/core-date':
+        specifier: workspace:*
+        version: link:../journeyapps-core-date
       '@ja-platform/core-xml':
         specifier: workspace:*
         version: link:../journeyapps-core-xml
@@ -162,6 +168,12 @@ importers:
       '@ja-platform/parser-common':
         specifier: workspace:*
         version: link:../journeyapps-parser-common
+      '@ja-platform/types':
+        specifier: workspace:*
+        version: link:../journeyapps-types
+      moment:
+        specifier: ^2.29.4
+        version: 2.30.1
     devDependencies:
       '@journeyapps/domparser':
         specifier: ^0.4.1
@@ -169,6 +181,8 @@ importers:
       stream-browserify:
         specifier: ^3.0.0
         version: 3.0.0
+
+  journeyapps-types: {}
 
 packages:
 

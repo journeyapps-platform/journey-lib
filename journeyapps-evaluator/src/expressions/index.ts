@@ -10,3 +10,5 @@ export * from './constant/ConstantExpression';
 export * from './function/FunctionExpression';
 
 export * from './text/FormatStringExpression';
+
+export * from './text/AbstractFormatExpression';

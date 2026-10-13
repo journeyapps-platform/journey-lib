@@ -1,4 +1,4 @@
-import { TextType } from '../src';
+import { textType } from '@ja-platform/types';
 import { describe, expect, it } from 'vitest';
 import { FunctionExpression, ConstantExpression, JSToken } from '../src';
 
@@ -8,7 +8,7 @@ describe('FunctionExpression', () => {
     expect(expression.withArguments([]).raw()).toBe('/* save */ $:save(); // end');
     expect(
       expression
-        .withArguments([ConstantExpression.parse("'one'", TextType), ConstantExpression.parse("'two'", TextType)])
+        .withArguments([ConstantExpression.parse("'one'", textType), ConstantExpression.parse("'two'", textType)])
         .raw()
     ).toBe("/* save */ $:save('one', 'two'); // end");
   });
@@ -16,23 +16,17 @@ describe('FunctionExpression', () => {
     const expression = FunctionExpression.parse('/* save */ $:save("save"); // save');
     expect(expression.withName('update').raw()).toBe('/* save */ $:update("save"); // save');
   });
-  it('replaces arguments while preserving surrounding tokens and evaluation source', async () => {
+  it('replaces arguments while preserving surrounding tokens and evaluation source', () => {
     const source = '$:save( /* first */ "before", find(true) )';
     const expression = FunctionExpression.parse(source);
     const updated = expression.withArguments([
-      ConstantExpression.parse("'it\\'s after'", TextType),
+      ConstantExpression.parse("'it\\'s after'", textType),
       FunctionExpression.parse('$:find(false)')
     ]);
     expect(updated.raw()).toBe("$:save( /* first */ 'it\\'s after', find(false) )");
     expect(expression.raw()).toBe(source);
     expect(expression.withArgumentSources(['42', 'find(false)']).raw()).toBe('$:save( /* first */ 42, find(false) )');
-    let evaluated: string;
-    await updated.evaluatePromise({
-      evaluateFunctionExpression: async (source) => {
-        evaluated = source;
-      }
-    } as any);
-    expect(evaluated).toBe("save( /* first */ 'it\\'s after', find(false) )");
+    expect(updated.code()).toBe("save( /* first */ 'it\\'s after', find(false) )");
   });
   it('keeps parenthesized arguments and ignores punctuation inside comments when editing', () => {
     const expression = FunctionExpression.parse('$:save /* (comment) */ (first, (second, third))');

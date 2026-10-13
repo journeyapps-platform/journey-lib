@@ -8,14 +8,8 @@ export { formatValue, formatValueAsync } from './utils/formatStringUtils';
 
 export * from './expressions';
 
-export * from './definitions/TypeInterface';
-
-export * from './definitions/VariableScope';
-export * from './definitions/VariableFormatStringScope';
-export * from './definitions/FormatStringScope';
+export * from './definitions/ValidationContext';
 
 export * from './tools';
 
 export * from './tokens';
-
-export * from './definitions/ValueType';
