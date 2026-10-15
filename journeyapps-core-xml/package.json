@@ -1,5 +1,5 @@
 {
-  "name": "@journeyapps/core-xml",
+  "name": "@ja-platform/core-xml",
   "version": "5.0.4",
   "description": "Journey XML library",
   "main": "./dist/node.js",
@@ -23,5 +23,9 @@
   "devDependencies": {
     "jsdom": "^24.0.0",
     "stream-browserify": "^3.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

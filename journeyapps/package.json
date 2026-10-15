@@ -1,5 +1,5 @@
 {
-  "name": "journeyapps",
+  "name": "@ja-platform/journeyapps",
   "version": "7.3.17",
   "description": "Journey JS library",
   "main": "./dist/index.js",
@@ -8,7 +8,11 @@
     "clean": "tsc --build --clean && rm -rf ./dist"
   },
   "dependencies": {
-    "@journeyapps/core-date": "workspace:*",
-    "@journeyapps/db": "workspace:*"
+    "@ja-platform/core-date": "workspace:*",
+    "@ja-platform/db": "workspace:*"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

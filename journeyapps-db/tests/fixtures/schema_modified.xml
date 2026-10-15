@@ -143,7 +143,7 @@
     <!-- for testing that JavaScript functions are not evaluated in Data Model format strings -->
     <model name="javascript_function_reference" label="JavaScript Function Reference">
         <field name="name" label="name" type="text"/>
-        <display>{name} {$:invalidViewFunction()}</display>
+        <display>{name} {{$:invalidViewFunction()}}</display>
     </model>
 
 </data-model>

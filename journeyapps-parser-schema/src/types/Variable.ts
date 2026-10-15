@@ -1,8 +1,7 @@
 import { AbstractObjectTypeFactory, GenerateTypeEvent } from '../schema/TypeFactory';
-import { Type } from './Type';
-import { ObjectType } from './ObjectType';
+import { Type } from '@ja-platform/types';
+import { SchemaModelType } from './SchemaModelType';
 import { XMLElement } from '@journeyapps/domparser/types';
-import { TypeInterface } from '@journeyapps/evaluator';
 
 export interface VariableJsonType {
   name: string;
@@ -12,7 +11,7 @@ export interface VariableJsonType {
 }
 
 // Variable constructor. A variable is simply a name and a type (can be null).
-export class Variable<T extends Type | TypeInterface = Type> {
+export class Variable<T extends Type = Type> {
   static TYPE = 'variable';
 
   static isInstanceOf(obj: any): obj is Variable {
@@ -47,7 +46,7 @@ export class Variable<T extends Type | TypeInterface = Type> {
     if (typeof this.label != 'undefined') {
       result.label = this.label;
     }
-    if (this.type != null && !(this.type instanceof ObjectType)) {
+    if (this.type != null && !(this.type instanceof SchemaModelType)) {
       const typeJson = this.type.toJSON();
       Object.assign(result, typeJson);
     }
@@ -61,19 +60,19 @@ export class Variable<T extends Type | TypeInterface = Type> {
   }
 }
 
-export interface GenerateVariableEvent<T extends TypeInterface> extends GenerateTypeEvent {
+export interface GenerateVariableEvent<T extends Type> extends GenerateTypeEvent {
   name: string;
   type: T;
 }
 
-export class VariableFactory<T extends TypeInterface = Type> extends AbstractObjectTypeFactory<
+export class VariableFactory<T extends Type = Type> extends AbstractObjectTypeFactory<
   Variable<T>,
   GenerateVariableEvent<T>
 > {
   constructor() {
     super(Variable.TYPE);
   }
-  generate<T extends TypeInterface = Type>(event: GenerateVariableEvent<T>): Variable<T> {
+  generate<T extends Type = Type>(event: GenerateVariableEvent<T>): Variable<T> {
     return new Variable<T>(event.name, event.type);
   }
 }

@@ -1,6 +1,6 @@
-import { Version } from '@journeyapps/parser-common';
+import { Version } from '@ja-platform/parser-common';
 import { describe, it, expect, beforeEach } from 'vitest';
-import * as blackmontapp_xml from '@journeyapps/core-xml';
+import * as blackmontapp_xml from '@ja-platform/core-xml';
 import { parser2, Schema } from '../src';
 
 const v3 = new Version('3.1');

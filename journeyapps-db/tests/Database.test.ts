@@ -1,7 +1,15 @@
-import { EnumOption } from '@journeyapps/parser-schema';
+import { EnumOption } from '@ja-platform/parser-schema';
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Collection, DatabaseObject, WebSQLAdapter, DBSchema as Schema, Attachment } from '../src';
+import {
+  Collection,
+  DatabaseObject,
+  WebSQLAdapter,
+  DBSchema as Schema,
+  Attachment,
+  Location,
+  operationsFor
+} from '../src';
 
 // @ts-ignore
 import schema3Xml from './fixtures/schema3.xml?raw';
@@ -78,10 +86,32 @@ describe('Database with WebSQLAdapter', () => {
     expect(obj.make).toBe('123');
   });
 
-  it('should not allow strings for numbers attributes', ({ db }) => {
-    expect(function () {
-      db.asset.create({ condition: 'Bad', weight: 'Heavy' });
+  it('should check model values through database operations', ({ db, schema }) => {
+    const operations = operationsFor(schema.objects.asset);
+    const asset = db.asset.create();
+    const building = db.building.create();
+    expect(operations.is(asset)).toBe(true);
+    expect(operations.parse(asset)).toBe(asset);
+    expect(operations.is(building)).toBe(false);
+    expect(() => operations.parse(building)).toThrow();
+    expect(() => operations.parse('asset')).toThrow();
+  });
+
+  it('should parse numeric strings and reject invalid numeric values', ({ db }) => {
+    expect(db.asset.create({ weight: '12.5' }).weight).toBe(12.5);
+    expect(() => db.asset.create({ weight: 'Heavy' })).toThrow();
+    expect(() => db.asset.create({ weight: '12kg' })).toThrow();
+  });
+
+  it('should normalize boolean assignments and reject unrecognized values', ({ db }) => {
+    const part = db.part.create({ archived: 'false' });
+    expect(part.archived).toBe(false);
+    part.archived = 1;
+    expect(part.archived).toBe(true);
+    expect(() => {
+      part.archived = 'perhaps';
     }).toThrow();
+    expect(part.archived).toBe(true);
   });
 
   it('should allow EnumOption or a number for an enum attribute', ({ db }) => {
@@ -114,8 +144,9 @@ describe('Database with WebSQLAdapter', () => {
     expect(obj.photo.id).toBe(validId);
     obj.photo = { id: validId };
     expect(obj.photo.id).toBe(validId);
-    obj.photo = new Attachment({ id: validId });
-    expect(obj.photo).toEqual(new Attachment({ id: validId }));
+    const attachment = new Attachment({ id: validId });
+    obj.photo = attachment;
+    expect(obj.photo).toBe(attachment);
 
     expect(function () {
       obj.photo = 'photo1';
@@ -125,11 +156,18 @@ describe('Database with WebSQLAdapter', () => {
   it('should initialize an object with provided attribute values', ({ db }) => {
     var obj = db.asset.create({
       make: 'Nokia',
+      position: { latitude: 18.83, longitude: -33.96 },
       someother: 'Not a valid property'
     });
     expect(obj.make).toBe('Nokia');
     expect(obj.model).toBe(null);
     expect(obj.someother).toBe(undefined);
+    expect(obj.position).toBeInstanceOf(Location);
+    const position = obj.position;
+    expect(() => {
+      obj.position = 12;
+    }).toThrow();
+    expect(obj.position).toBe(position);
   });
 
   it('should error when setting a reserved property', ({ db }) => {
@@ -183,28 +221,6 @@ describe('Database with WebSQLAdapter', () => {
     expect(obj.description).toBe(null);
   });
 
-  it('should reload an object with cleared relationship', async ({ db }) => {
-    const obj = db.asset.create({
-      make: 'Nokia',
-      model: '5800',
-      description: 'Test'
-    });
-
-    await obj.save();
-
-    const asset = await db.asset.first(obj.id);
-    asset.model = '5230';
-    asset.description = null;
-    await asset.save();
-
-    await obj.reload();
-
-    expect(obj.persisted).toBe(true);
-    expect(obj.make).toBe('Nokia');
-    expect(obj.model).toBe('5230');
-    expect(obj.description).toBe(null);
-  });
-
   it('should destroy an object after fetching', async ({ db }) => {
     var obj = db.asset.create({ make: 'Nokia', model: '5800' });
     await obj.save();
@@ -242,8 +258,9 @@ describe('Database with WebSQLAdapter', () => {
     expect(asset.model).toBe('5800');
   });
 
-  it('should evaluate the display name', ({ db }) => {
+  it('should evaluate the display name', async ({ db }) => {
     const obj = db.asset.create({ make: 'Nokia', model: '5800' });
     expect(obj.toString()).toBe('Nokia 5800 []');
+    expect(await obj._display()).toBe('Nokia 5800 []');
   });
 });

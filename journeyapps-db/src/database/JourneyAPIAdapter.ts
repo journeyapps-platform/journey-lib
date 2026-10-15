@@ -2,14 +2,13 @@ import 'isomorphic-fetch';
 import { retryableFetch } from '../utils/retryableFetch';
 import type { Response, RequestInit } from 'node-fetch';
 import { BaseAdapter } from './adapters/BaseAdapter';
-import { Variable, Relationship } from '@journeyapps/parser-schema';
-import { Version } from '@journeyapps/parser-common';
+import { SchemaModelType, Variable, Relationship, ChoiceType } from '@ja-platform/parser-schema';
+import { Version } from '@ja-platform/parser-common';
 import { Query } from '../query/Query';
 import { ExecuteBatchOperation } from './Batch';
 import { ObjectData, PersistedObjectData } from '../types/ObjectData';
 import { ApiCredentials } from '../credentials';
 import { Operation } from '../query/queryOperations';
-import { ObjectType } from '../types/ObjectType';
 import { DBSchema } from '../Schema';
 
 export type { Response, RequestInit } from 'node-fetch';
@@ -43,7 +42,7 @@ export interface ApiAdapterOptions {
 }
 
 export class JourneyAPIAdapter extends BaseAdapter {
-  static apiToInternalFormat(type: ObjectType, apiObj: any) {
+  static apiToInternalFormat(type: SchemaModelType, apiObj: any) {
     const dbObj: ApiObjectData = {
       id: apiObj.id,
       type: type.name,
@@ -81,7 +80,7 @@ export class JourneyAPIAdapter extends BaseAdapter {
           }
           dbObj.attributes[name] = attachment;
         }
-      } else if (attr.type.hasOptions) {
+      } else if (ChoiceType.isInstanceOf(attr.type) && attr.type.hasOptions) {
         const value = apiObj[name];
         if (attr.type.multipleOptions) {
           const array: any[] = [];
@@ -164,7 +163,7 @@ export class JourneyAPIAdapter extends BaseAdapter {
     return result;
   }
 
-  private async getIdBatch(model: ObjectType, ids: string[]) {
+  private async getIdBatch(model: SchemaModelType, ids: string[]) {
     const idAttr = model.getAttribute('id');
     const query = new Query(
       this,
@@ -411,7 +410,7 @@ function serializeSortCriteriaToUriEncoding(criteria: any, prefix?: string) {
   return str.join('&');
 }
 
-function dbToApiObject(type: ObjectType, id: string, dbObj: PersistedObjectData) {
+function dbToApiObject(type: SchemaModelType, id: string, dbObj: PersistedObjectData) {
   let apiObj: any = {
     type: type.name,
     id: id

@@ -1,5 +1,5 @@
 import { DatabaseObject } from './DatabaseObject';
-import { ObjectType } from '../types/ObjectType';
+import { SchemaModelType } from '@ja-platform/parser-schema';
 import { DatabaseAdapter } from './adapters/DatabaseAdapter';
 import { Query } from '../query/Query';
 import * as j from '../utils/JourneyPromise';
@@ -8,10 +8,10 @@ import * as j from '../utils/JourneyPromise';
 // This is the external interface for an object collection, as in `DB.asset`.
 
 export class Collection<T extends DatabaseObject = DatabaseObject> {
-  type: ObjectType;
+  type: SchemaModelType;
   adapter: DatabaseAdapter;
 
-  constructor(adapter: DatabaseAdapter, type: ObjectType) {
+  constructor(adapter: DatabaseAdapter, type: SchemaModelType) {
     this.type = type;
     this.adapter = adapter;
   }

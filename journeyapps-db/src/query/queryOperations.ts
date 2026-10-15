@@ -1,16 +1,17 @@
+import { operationsFor } from '../types/TypeOperations';
 // # Query
 // This module handles the parsing and representation of query expressions.
 // It contains the logic to filter a single object based on an expression.
 // It is up to the database adapters to perform optimised queries based on an index.
 
-import { Variable } from '@journeyapps/parser-schema';
-import { Day } from '@journeyapps/core-date';
+import { SchemaModelType, Variable } from '@ja-platform/parser-schema';
+import { Day } from '@ja-platform/core-date';
+import { ArrayType, QueryType } from '@ja-platform/types';
 
 import { ObjectData } from '../types/ObjectData';
-import { Type } from '../types/Type';
 
 // Build an expression from a hash such as {make: 'Nokia', model: '5800'}
-export function expressionFromHash(scopeType: Type, hash: any): Expression {
+export function expressionFromHash(scopeType: SchemaModelType, hash: any): Expression {
   let operations: Operation[] = [];
   for (let key in hash) {
     if (hash.hasOwnProperty(key)) {
@@ -19,7 +20,7 @@ export function expressionFromHash(scopeType: Type, hash: any): Expression {
       if (attribute == null) {
         throw new Error(`'${key}' is not defined on '${scopeType.name}'`);
       }
-      if (attribute.type.isObject && value != null) {
+      if (SchemaModelType.isInstanceOf(attribute.type) && value != null) {
         value = value.id;
       }
       const operation = new Operation(attribute, '=', value);
@@ -81,7 +82,7 @@ export class Operation implements Expression {
       if (rawAttributeValue == null) {
         attributeValue = null;
       } else {
-        attributeValue = this.attribute.type.valueFromJSON(rawAttributeValue);
+        attributeValue = operationsFor(this.attribute.type).valueFromJSON(rawAttributeValue);
       }
     }
     const compareDiff = compare(attributeValue, this.value);
@@ -611,7 +612,7 @@ export class Tokenizer {
 // ## Parser
 // The parser uses the tokenizer to build an Expression object.
 export class Parser {
-  constructor(private scopeType: Type, private tokenizer: Tokenizer, private args: any[]) {
+  constructor(private scopeType: SchemaModelType, private tokenizer: Tokenizer, private args: any[]) {
     if (args == null) {
       this.args = [];
     }
@@ -674,7 +675,7 @@ export class Parser {
           attributeStart,
           attributeEnd
         );
-      } else if (attribute.type.isCollection) {
+      } else if (ArrayType.isInstanceOf(attribute.type) || QueryType.isInstanceOf(attribute.type)) {
         throw this.tokenizer.exception(
           "Cannot query by has-many field '" + attributeName + "'",
           attributeStart,
@@ -683,7 +684,7 @@ export class Parser {
       }
       if (this.args.length > valueIndex) {
         let value = this.args[valueIndex];
-        if (attribute.type.isObject && value != null) {
+        if (SchemaModelType.isInstanceOf(attribute.type) && value != null) {
           value = value.id;
         }
         return new Operation(attribute, operator, value);
@@ -707,6 +708,6 @@ export class Parser {
   }
 }
 
-export function parse(scopeType: Type, expression: string, args: any[]) {
+export function parse(scopeType: SchemaModelType, expression: string, args: any[]) {
   return new Parser(scopeType, new Tokenizer(expression), args).parse();
 }

@@ -8,4 +8,4 @@ export {
   DatabaseObject,
   Query,
   setCreateAccessor
-} from '@journeyapps/db';
+} from '@ja-platform/db';

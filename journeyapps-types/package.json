@@ -1,0 +1,19 @@
+{
+  "name": "@ja-platform/types",
+  "version": "0.1.0",
+  "description": "Journey value types",
+  "main": "./dist/index.js",
+  "typings": "./dist/@types/index.d.ts",
+  "scripts": {
+    "build": "tsc --build",
+    "watch": "tsc -b --watch",
+    "clean": "tsc -b --clean && rm -rf dist"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}

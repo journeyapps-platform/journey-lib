@@ -119,6 +119,9 @@ describe('DB querying', () => {
     expect(rooms[0].toString()).toBe(null);
     expect(rooms[1].toString()).toBe(null);
 
+    expect(await rooms[0]._display()).toBe('R1 Room 1 (The Building)');
+    expect(await rooms[1]._display()).toBe('R2 Room 2 ()');
+
     // Fetch with display rel
     rooms = await db.room.all().orderBy('name')._fetchWithDisplay();
     expect(rooms.length).toBe(2);
@@ -213,13 +216,13 @@ describe('DB querying', () => {
     });
   });
 
-  it('should not attempt to evaluate JavaScript functions in Data Model format strings', ({ db }) => {
-    // format string for display element: {name} {$:invalidViewFunction()}
+  it('should render escaped code as literal display text', ({ db }) => {
+    // format string for display element: {name} {{$:invalidViewFunction()}}
     //noinspection JSUnresolvedVariable
     const jsReference = db.javascript_function_reference.create({
       name: 'Function 1'
     });
-    // the function token expression should be printed as a literal string and not be evaluated
+    // Escaped braces preserve the code as literal text.
     expect(jsReference.toString()).toEqual('Function 1 {$:invalidViewFunction()}');
   });
 

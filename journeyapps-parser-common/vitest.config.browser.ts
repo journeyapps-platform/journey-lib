@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   optimizeDeps: {
-    include: ['@journeyapps/core-xml']
+    include: ['@ja-platform/core-xml']
   },
   build: {
     commonjsOptions: {

@@ -1,7 +1,5 @@
-import { ArrayType } from '../types/collections/ArrayType';
-import { QueryType } from '../types/collections/QueryType';
 import { FunctionType } from '../types/FunctionType';
-import { ObjectType } from '../types/ObjectType';
+import { SchemaModelType } from '../types/SchemaModelType';
 import { Param } from '../types/Param';
 import { PrimitiveTypeInstance, PrimitiveTypeMap, PrimitiveTypeName } from '../types/primitives';
 import { Relationship } from '../types/Relationship';
@@ -17,22 +15,13 @@ export interface GenerateTypeEvent {
   schema: Schema;
 }
 
-export type ObjectTypeInstance =
-  | Variable<any>
-  | Param
-  | FunctionType
-  | ObjectType
-  | ArrayType
-  | QueryType
-  | Relationship;
+export type ObjectTypeInstance = Variable<any> | Param | FunctionType | SchemaModelType | Relationship;
 
 export type ObjectTypeName =
   | typeof Param.TYPE
   | typeof Variable.TYPE
   | typeof FunctionType.TYPE
-  | typeof ObjectType.TYPE
-  | typeof ArrayType.TYPE
-  | typeof QueryType.TYPE
+  | typeof SchemaModelType.TYPE
   | typeof Relationship.TYPE;
 
 export abstract class AbstractObjectTypeFactory<
@@ -58,7 +47,6 @@ export class PrimitiveTypeFactory<T extends PrimitiveTypeInstance, E extends Gen
   }
   generate(event: E): T {
     const instance = new PrimitiveTypeMap[this.name]();
-    instance.setupVariables(event.schema);
     return instance as T;
   }
 }

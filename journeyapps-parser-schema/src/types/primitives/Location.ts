@@ -1,19 +1,16 @@
-import { Schema } from '../../schema/Schema';
-import { Type } from '../Type';
-import { PrimitiveType } from './index';
+import { ObjectType, Type } from '@ja-platform/types';
+import { TextType } from './Text';
 
-export class LocationType extends Type {
+export class LocationType extends ObjectType {
   static readonly TYPE = 'location';
 
   constructor() {
     super(LocationType.TYPE);
   }
 
-  setupVariables(schema: Schema) {
-    this.addAttribute(schema.variable('latitude', PrimitiveType.TEXT));
-    this.addAttribute(schema.variable('longitude', PrimitiveType.TEXT));
-    this.addAttribute(schema.variable('altitude', PrimitiveType.TEXT));
-    this.addAttribute(schema.variable('horizontal_accuracy', PrimitiveType.TEXT));
-    this.addAttribute(schema.variable('vertical_accuracy', PrimitiveType.TEXT));
+  getField(name: string): Type | null {
+    return ['latitude', 'longitude', 'altitude', 'horizontal_accuracy', 'vertical_accuracy'].includes(name)
+      ? new TextType()
+      : null;
   }
 }

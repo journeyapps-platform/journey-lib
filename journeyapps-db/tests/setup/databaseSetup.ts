@@ -1,4 +1,4 @@
-import { Version } from '@journeyapps/parser-common';
+import { Version } from '@ja-platform/parser-common';
 import { beforeAll } from 'vitest';
 import { Database, DBSchema as Schema, WebSQLAdapter } from '../../src';
 

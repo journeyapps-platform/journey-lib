@@ -1,5 +1,5 @@
 import { AbstractObjectTypeFactory } from '../schema/TypeFactory';
-import { ObjectType } from './ObjectType';
+import { SchemaModelType } from './SchemaModelType';
 
 export class Relationship {
   static readonly TYPE = 'relationship';
@@ -8,10 +8,10 @@ export class Relationship {
   type: string;
 
   /** local object type (containing the belongs_to) */
-  objectType: ObjectType; // TODO
+  objectType: SchemaModelType; // TODO
 
   /** foreign object type (containing the has_many) */
-  foreignType: ObjectType; // TODO
+  foreignType: SchemaModelType; // TODO
 
   /** The name used on the local object to identify the relationship (singular) */
   name: string;

@@ -1,5 +1,5 @@
 import { ApiAdapterOptions, JourneyAPIAdapter } from './JourneyAPIAdapter';
-import { Version } from '@journeyapps/parser-common';
+import { Version } from '@ja-platform/parser-common';
 import { ApiCredentialOptions, ApiCredentials } from '../credentials/ApiCredentials';
 import { Database } from './Database';
 import { DBSchema } from '../Schema';

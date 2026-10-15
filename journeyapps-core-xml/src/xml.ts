@@ -15,6 +15,12 @@ export interface XMLRange {
   end: XMLPosition;
 }
 
+export interface XMLDiagnostic {
+  element?: XMLPositional;
+  message: string;
+  type?: ErrorType;
+}
+
 export interface ValidationError extends XMLRange {
   message: string;
   type: ErrorType;
@@ -214,7 +220,7 @@ export function error(element: XMLPositional, message: string, type?: ErrorType)
   const position = getPosition(element);
 
   return {
-    message: message,
+    message,
     type: type || 'error',
     start: position.start,
     end: position.end

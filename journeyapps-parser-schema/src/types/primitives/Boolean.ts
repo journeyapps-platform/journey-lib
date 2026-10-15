@@ -1,14 +1,4 @@
-import { TypeInterface } from '@journeyapps/evaluator';
-import { ChoiceType } from './ChoiceType';
+import { BooleanType as ValueBooleanType } from '@ja-platform/types';
+import { withChoices } from './ChoiceType';
 
-export class BooleanType extends ChoiceType {
-  static readonly TYPE = 'boolean';
-
-  static isInstanceOf(type: TypeInterface): type is BooleanType {
-    return type.name === BooleanType.TYPE;
-  }
-
-  constructor() {
-    super(BooleanType.TYPE, { multiple: false });
-  }
-}
+export class BooleanType extends withChoices(ValueBooleanType) {}

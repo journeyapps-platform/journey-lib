@@ -7,8 +7,15 @@
     "rootDir": "src",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
-  "include": ["./src/**/*.ts"],
+  "include": [
+    "./src/**/*.ts"
+  ],
   "references": [
-    { "path": "../journeyapps-core-xml" }
+    {
+      "path": "../journeyapps-core-xml"
+    },
+    {
+      "path": "../journeyapps-types"
+    }
   ]
 }

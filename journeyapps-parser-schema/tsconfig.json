@@ -7,9 +7,21 @@
     "rootDir": "src",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
-  "include": ["./src/**/*.ts"],
+  "include": [
+    "./src/**/*.ts"
+  ],
   "references": [
-    { "path": "../journeyapps-core-xml" },
-    { "path": "../journeyapps-parser-common" }
+    {
+      "path": "../journeyapps-core-xml"
+    },
+    {
+      "path": "../journeyapps-parser-common"
+    },
+    {
+      "path": "../journeyapps-types"
+    },
+    {
+      "path": "../journeyapps-core-date"
+    }
   ]
 }

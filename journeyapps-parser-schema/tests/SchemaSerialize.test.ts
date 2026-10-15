@@ -1,8 +1,7 @@
-import { prettyText, parse } from '@journeyapps/core-xml';
-import { FormatString } from '@journeyapps/evaluator';
-import { Version } from '@journeyapps/parser-common';
+import { prettyText, parse } from '@ja-platform/core-xml';
+import { Version } from '@ja-platform/parser-common';
 import { describe, it, expect } from 'vitest';
-import { Schema, toDOM } from '../src';
+import { jsonParser, Schema, SchemaObjectDisplayExpression, toDOM } from '../src';
 
 // @ts-ignore
 import schema3_xml from './fixtures/schema3.xml?raw';
@@ -24,6 +23,11 @@ describe('Schema toDOM', () => {
     // Unchanged input should give unchanged output.
     expect(outputText).toEqual(originalPretty);
 
+    // JSON must carry the same display source as XML, including its placeholders.
+    const restored = new Schema();
+    jsonParser(restored).parse(JSON.parse(JSON.stringify(schema)));
+    expect(restored.objects.room.displayFormat.raw()).toBe('{barcode} {name} ({building.name})');
+
     // START MODIFICATIONS
 
     // Add fields
@@ -38,7 +42,7 @@ describe('Schema toDOM', () => {
     schema.objects.worker.attributes.name.label = 'Full Name';
 
     // Change display
-    schema.objects.building.displayFormat = new FormatString({ expression: 'Updated' });
+    schema.objects.building.displayFormat = SchemaObjectDisplayExpression.parse('Updated');
 
     // Delete field
     delete schema.objects.room.attributes.name;

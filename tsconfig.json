@@ -4,6 +4,7 @@
     },
     "files": [],
     "references": [
+      {"path": "./journeyapps-types"},
       {"path": "./journeyapps"},
       {"path": "./journeyapps-core-date"},
       {"path": "./journeyapps-core-xml"},
@@ -13,4 +14,3 @@
       {"path": "./journeyapps-parser-schema"},
     ]
   }
-  
