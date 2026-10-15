@@ -1,4 +1,4 @@
-import { error, XMLPositional, ValidationError, ErrorType } from '@ja-platform/core-xml';
+import { error, ValidationError, XMLDiagnostic } from '@ja-platform/core-xml';
 import { XMLError } from '@journeyapps/domparser/types';
 
 export class ParseErrors {
@@ -8,7 +8,7 @@ export class ParseErrors {
     this.errors = [];
   }
 
-  pushError(element: XMLPositional, message: string, type?: ErrorType) {
+  pushError({ element, message, type }: XMLDiagnostic) {
     this.errors.push(error(element, message, type));
   }
 

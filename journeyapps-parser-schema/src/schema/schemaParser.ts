@@ -278,12 +278,12 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
     recordSource(schema, root);
 
     if (root == null) {
-      errorHandler.pushError(null, 'Not a valid XML document');
+      errorHandler.pushError({ element: null, message: 'Not a valid XML document' });
       return; // fatal error
     }
 
     if (root.tagName != tag.root) {
-      errorHandler.pushError(root, `<${tag.root}> root tag expected`);
+      errorHandler.pushError({ element: root, message: `<${tag.root}> root tag expected` });
       return; // fatal error
     }
 
@@ -295,7 +295,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
 
     const objects = xml.children(root, tag.model);
     if (objects.length === 0) {
-      errorHandler.pushError(root, 'At least one model is required');
+      errorHandler.pushError({ element: root, message: 'At least one model is required' });
     }
 
     schema.objects = {};
@@ -306,7 +306,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       if (object.name != null) {
         if (object.name in schema.objects) {
           const errorElement = xml.attributeNode(element, 'name') || element;
-          errorHandler.pushError(errorElement, "Model '" + object.name + "' is already defined");
+          errorHandler.pushError({ element: errorElement, message: "Model '" + object.name + "' is already defined" });
           errorHandler.pushErrors(object.errors);
         } else {
           schema.objects[object.name] = object;
@@ -368,13 +368,14 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
     // Special case here: if name === null, we don't want to tell the user it's
     // a reserved name, since it's not specified at all.
     if (validation && object.name !== null) {
-      errorHandler.pushError(
-        xml.attributeNode(element, 'name'),
-        validation == 'error'
-          ? `Reserved model name '${object.name}'`
-          : `'${object.name}' is reserved in some contexts and may cause issues.`,
-        validation
-      );
+      errorHandler.pushError({
+        element: xml.attributeNode(element, 'name'),
+        message:
+          validation == 'error'
+            ? `Reserved model name '${object.name}'`
+            : `'${object.name}' is reserved in some contexts and may cause issues.`,
+        type: validation
+      });
     }
 
     // the ordering of the elements (elements can share a number and be interchangeable)
@@ -400,7 +401,10 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       const variable = parseField(attributeElement, false);
       if (object.attributes.hasOwnProperty(variable.name)) {
         const errorElement = xml.attributeNode(attributeElement, 'name') || attributeElement;
-        errorHandler.pushError(errorElement, description.field + " '" + variable.name + "' is already defined");
+        errorHandler.pushError({
+          element: errorElement,
+          message: description.field + " '" + variable.name + "' is already defined"
+        });
       } else {
         object.addAttribute(variable);
       }
@@ -443,22 +447,26 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       });
       displayErrors.forEach(function (error) {
         if (attribute) {
-          errorHandler.pushError(
-            xml.attributeValuePosition(displayElement, 'format', error.token.start, error.token.end),
-            error.message
-          );
+          errorHandler.pushError({
+            element: xml.attributeValuePosition(displayElement, 'format', error.token.start, error.token.end),
+            message: error.message
+          });
         } else {
-          errorHandler.pushError(
-            xml.elementTextPosition(displayElement, error.token.start, error.token.end),
-            error.message
-          );
+          errorHandler.pushError({
+            element: xml.elementTextPosition(displayElement, error.token.start, error.token.end),
+            message: error.message
+          });
         }
       });
     } else if (displayElements.length === 0) {
-      errorHandler.pushError(element, '<display> is required');
+      errorHandler.pushError({ element, message: '<display> is required' });
       object.displayFormat = SchemaObjectDisplayExpression.parse('');
     } else {
-      errorHandler.pushError(displayElements[1], 'Only one <display> element is allowed', 'warning');
+      errorHandler.pushError({
+        element: displayElements[1],
+        message: 'Only one <display> element is allowed',
+        type: 'warning'
+      });
     }
 
     return object;
@@ -482,11 +490,11 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         if (name == null || name === '') {
           name = typeName;
         }
-        object.addBelongsTo({ name: name, type: typeName, schema: schema });
+        object.addBelongsTo({ name, type: typeName, schema });
         recordSource(object.belongsToVars[name], e);
       } catch (err) {
         const node = xml.attributeNode(e, err.attribute) || e;
-        errorHandler.pushError(node, err.message);
+        errorHandler.pushError({ element: node, message: err.message });
       }
     });
   }
@@ -512,19 +520,19 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       if (typeName != null) {
         const objectType = schema.objects[typeName];
         if (objectType == null) {
-          errorHandler.pushError(
-            xml.attributeNode(e, tag.relatedModel) || e,
-            "Object '" + typeName + "' is not defined"
-          );
+          errorHandler.pushError({
+            element: xml.attributeNode(e, tag.relatedModel) || e,
+            message: "Object '" + typeName + "' is not defined"
+          });
         } else {
           let rel = null;
           if (inverseOf != null) {
             rel = objectType.belongsTo[inverseOf];
             if (rel == null) {
-              errorHandler.pushError(
-                xml.attributeNode(e, tag.inverseOf),
-                "'" + inverseOf + "' is not defined on '" + objectType.name + "'"
-              );
+              errorHandler.pushError({
+                element: xml.attributeNode(e, tag.inverseOf),
+                message: "'" + inverseOf + "' is not defined on '" + objectType.name + "'"
+              });
             }
           } else {
             const candidates = [];
@@ -539,9 +547,10 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
             if (candidates.length == 1) {
               rel = candidates[0];
             } else if (candidates.length === 0) {
-              errorHandler.pushError(
-                e,
-                'Need <' +
+              errorHandler.pushError({
+                element: e,
+                message:
+                  'Need <' +
                   tag.belongsTo +
                   ' ' +
                   tag.relatedModel +
@@ -550,30 +559,30 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
                   '"> in object \'' +
                   objectType.name +
                   "'"
-              );
+              });
             } else {
               const names = [];
               for (let i = 0; i < candidates.length; i++) {
                 names.push(candidates[i].name);
               }
-              errorHandler.pushError(
-                e,
-                'Ambiguous ' + e.tagName + ' - set ' + tag.inverseOf + ' to one of ' + names.join(', ')
-              );
+              errorHandler.pushError({
+                element: e,
+                message: 'Ambiguous ' + e.tagName + ' - set ' + tag.inverseOf + ' to one of ' + names.join(', ')
+              });
             }
           }
 
           if (rel != null) {
             if (object.hasMany.hasOwnProperty(name)) {
-              errorHandler.pushError(
-                xml.attributeNode(e, 'name') || e,
-                "Relationship '" + name + "' is already defined"
-              );
+              errorHandler.pushError({
+                element: xml.attributeNode(e, 'name') || e,
+                message: "Relationship '" + name + "' is already defined"
+              });
             } else if (rel.foreignName != null) {
-              errorHandler.pushError(
-                e,
-                "Relationship '" + rel.name + "' already has a " + e.tagName + " '" + rel.foreignName + "'"
-              );
+              errorHandler.pushError({
+                element: e,
+                message: "Relationship '" + rel.name + "' already has a " + e.tagName + " '" + rel.foreignName + "'"
+              });
             } else {
               rel.foreignName = name;
 
@@ -620,10 +629,10 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       recordSource(webhook, webhookElement);
 
       if (webhook.type != 'ready' && webhook.type != 'update') {
-        errorHandler.pushError(
-          xml.attributeNode(webhookElement, 'type') || webhookElement,
-          'webhook type must be "ready" or "update"'
-        );
+        errorHandler.pushError({
+          element: xml.attributeNode(webhookElement, 'type') || webhookElement,
+          message: 'webhook type must be "ready" or "update"'
+        });
       }
 
       if (webhook.receiver == null) {
@@ -632,21 +641,24 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         }
 
         if (webhook.action != null) {
-          errorHandler.pushError(
-            xml.attributeNode(webhookElement, 'action') || webhookElement,
-            'webhook action is not allowed unless receiver is specified'
-          );
+          errorHandler.pushError({
+            element: xml.attributeNode(webhookElement, 'action') || webhookElement,
+            message: 'webhook action is not allowed unless receiver is specified'
+          });
         }
       } else {
         if (webhook.receiver != 'pdfmailer' && webhook.receiver != 'cloudcode') {
-          errorHandler.pushError(
-            xml.attributeNode(webhookElement, 'receiver') || webhookElement,
-            'webhook receiver must be "cloudcode" or "pdfmailer" when specified'
-          );
+          errorHandler.pushError({
+            element: xml.attributeNode(webhookElement, 'receiver') || webhookElement,
+            message: 'webhook receiver must be "cloudcode" or "pdfmailer" when specified'
+          });
         }
 
         if (webhook.action == null || webhook.action == '') {
-          errorHandler.pushError(webhookElement, 'webhook action required when receiver is specified');
+          errorHandler.pushError({
+            element: webhookElement,
+            message: 'webhook action required when receiver is specified'
+          });
         }
 
         if (webhook.name == null) {
@@ -672,20 +684,20 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         // 'required' defaults to true if not provided
         const fieldRequired = booleanMapping[fieldRequiredText];
         if (fieldRequired == null) {
-          errorHandler.pushError(
-            xml.attributeNode(fieldElement, 'required') || fieldElement,
-            'required must be "true" or "false"'
-          );
+          errorHandler.pushError({
+            element: xml.attributeNode(fieldElement, 'required') || fieldElement,
+            message: 'required must be "true" or "false"'
+          });
         }
 
         const fieldEmbedText = getAttribute(fieldElement, 'embed');
         // 'embed' defaults to true if not provided
         const fieldEmbed = booleanMapping[fieldEmbedText];
         if (fieldEmbed == null) {
-          errorHandler.pushError(
-            xml.attributeNode(fieldElement, 'embed') || fieldElement,
-            'embed must be "true" or "false"'
-          );
+          errorHandler.pushError({
+            element: xml.attributeNode(fieldElement, 'embed') || fieldElement,
+            message: 'embed must be "true" or "false"'
+          });
         }
 
         let fieldState = getAttribute(fieldElement, 'state');
@@ -694,10 +706,10 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
           fieldState = 'present';
         }
         if (fieldState != 'present' && fieldState != 'uploaded') {
-          errorHandler.pushError(
-            xml.attributeNode(fieldElement, 'state') || fieldElement,
-            'state must be "present" or "uploaded"'
-          );
+          errorHandler.pushError({
+            element: xml.attributeNode(fieldElement, 'state') || fieldElement,
+            message: 'state must be "present" or "uploaded"'
+          });
         }
 
         const field = {
@@ -765,9 +777,15 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         }
         const fieldType = object.attributes[key] || object.belongsToVars[key];
         if (!fieldType) {
-          errorHandler.pushError(xml.attributeNode(e, 'on') || e, "Undefined field or model in index: '" + key + "'");
+          errorHandler.pushError({
+            element: xml.attributeNode(e, 'on') || e,
+            message: "Undefined field or model in index: '" + key + "'"
+          });
         } else if (['attachment', 'multiple-choice', 'multiple-choice-integer'].indexOf(fieldType.type.name) >= 0) {
-          errorHandler.pushError(xml.attributeNode(e, 'on') || e, "Field is not indexable: '" + key + "'");
+          errorHandler.pushError({
+            element: xml.attributeNode(e, 'on') || e,
+            message: "Field is not indexable: '" + key + "'"
+          });
         }
         keys.push({
           dir,
@@ -783,14 +801,14 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         databases = databaseAttribute.split(',') as IndexDatabase[];
         for (let db of databases) {
           if ([IndexDatabase.APP, IndexDatabase.CLOUD].indexOf(db) == -1) {
-            errorHandler.pushError(xml.attributeNode(e, 'database'), `Invalid database: ${db}`);
+            errorHandler.pushError({ element: xml.attributeNode(e, 'database'), message: `Invalid database: ${db}` });
           }
         }
       }
       const index: ModelIndex = {
         on, // Deprecated, since this doesn't support IndexDirection.
         keys,
-        name: name,
+        name,
         databases
       };
       object.allIndexes.push(index);
@@ -815,7 +833,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         let enumOption = type.addOption(value, label, index);
         recordSource(enumOption, e);
       } catch (err) {
-        errorHandler.pushError(xml.attributeNode(e, tag.optionKey) || e, err.message);
+        errorHandler.pushError({ element: xml.attributeNode(e, tag.optionKey) || e, message: err.message });
       }
       index++;
       largest = Math.max(largest, value);
@@ -836,7 +854,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         recordSource(enumOption, e);
         index++;
       } catch (err) {
-        errorHandler.pushError(xml.attributeNode(e, tag.optionKey) || e, err.message);
+        errorHandler.pushError({ element: xml.attributeNode(e, tag.optionKey) || e, message: err.message });
       }
     });
   }
@@ -857,10 +875,13 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
           recordSource(enumOption, e);
           index++;
         } catch (err) {
-          errorHandler.pushError(xml.attributeNode(e, tag.optionKey) || e, err.message);
+          errorHandler.pushError({ element: xml.attributeNode(e, tag.optionKey) || e, message: err.message });
         }
       } else {
-        errorHandler.pushError(xml.attributeNode(e, tag.optionKey) || e, 'key must be "true" or "false"');
+        errorHandler.pushError({
+          element: xml.attributeNode(e, tag.optionKey) || e,
+          message: 'key must be "true" or "false"'
+        });
       }
     });
     if (Object.keys(type.options).length === 0) {
@@ -868,7 +889,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
       type.addOption(true, 'Yes', 1);
     }
     if (Object.keys(type.options).length != 2) {
-      errorHandler.pushError(element, 'A boolean must contain exactly two options.');
+      errorHandler.pushError({ element, message: 'A boolean must contain exactly two options.' });
     }
   }
 
@@ -943,13 +964,17 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
     if (!isVariable) {
       const validation = validateFieldName(variable.name);
       if (validation) {
-        errorHandler.pushError(
-          xml.attributeNode(element, 'name'),
-          `Reserved field name '${variable.name}'`,
-          validation
-        );
+        errorHandler.pushError({
+          element: xml.attributeNode(element, 'name'),
+          message: `Reserved field name '${variable.name}'`,
+          type: validation
+        });
       } else if (variable.name != null && variable.name.slice(-3) === '_id') {
-        errorHandler.pushError(xml.attributeNode(element, 'name'), "Field name should not end with '_id'", 'warning');
+        errorHandler.pushError({
+          element: xml.attributeNode(element, 'name'),
+          message: "Field name should not end with '_id'",
+          type: 'warning'
+        });
       }
     }
 
@@ -1030,10 +1055,10 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
           variable.type.spec = v3SpecMapping[subType];
 
           if (variable.type.spec == null) {
-            errorHandler.pushError(
-              xml.attributeNode(element, 'type'),
-              "'" + subType + "' is not a valid string format"
-            );
+            errorHandler.pushError({
+              element: xml.attributeNode(element, 'type'),
+              message: "'" + subType + "' is not a valid string format"
+            });
           }
         }
       } else if (DateType.isInstanceOf(variable.type)) {
@@ -1048,12 +1073,15 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
         variable.type.media = getAttribute(element, 'media');
         if (variable.type.media == null) {
           if (v3) {
-            errorHandler.pushError(
+            errorHandler.pushError({
               element,
-              'Include media="" with a specific mime type, or media="any" for any of the allowed types.'
-            );
+              message: 'Include media="" with a specific mime type, or media="any" for any of the allowed types.'
+            });
           } else {
-            errorHandler.pushError(element, 'Include media="image/svg+xml" (signature) or "image/jpeg" (picture)');
+            errorHandler.pushError({
+              element,
+              message: 'Include media="image/svg+xml" (signature) or "image/jpeg" (picture)'
+            });
           }
         }
         // parseElement validates the allowed values when the element is present
@@ -1066,7 +1094,10 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
 
     if (variable.type == null) {
       if (xml.attributeNode(element, 'type') != null && typeName !== '') {
-        errorHandler.pushError(xml.attributeNode(element, 'type'), "Invalid type '" + originalTypeName + "'");
+        errorHandler.pushError({
+          element: xml.attributeNode(element, 'type'),
+          message: "Invalid type '" + originalTypeName + "'"
+        });
       } else {
         // This case is covered by parseElement().
       }
@@ -1091,7 +1122,7 @@ export function parser(schema: Schema, options?: { version?: ParseVersion; recor
     parseBelongsTo,
     parseDisplay,
     reset,
-    getErrors: getErrors
+    getErrors
   };
 }
 
@@ -1203,7 +1234,7 @@ export function jsonParser(schema: Schema) {
         const rel = object.addBelongsTo({
           name: relName,
           type: relData.type,
-          schema: schema,
+          schema,
           foreignName: relData.foreignName
         });
       });
